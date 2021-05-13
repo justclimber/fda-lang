@@ -44,7 +44,7 @@ func (node *AstStructFieldAssignment) Expression() {}
 type AstUnary struct {
 	Token    Token
 	Right    AstExpression
-	Operator string
+	Operator TokenID
 }
 
 func (node *AstUnary) Expression() {}
@@ -61,7 +61,7 @@ type AstBinOperation struct {
 	Token    Token
 	Left     AstExpression
 	Right    AstExpression
-	Operator string
+	Operator TokenID
 }
 
 func (node *AstBinOperation) Expression() {}

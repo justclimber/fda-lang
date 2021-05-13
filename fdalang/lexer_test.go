@@ -281,7 +281,7 @@ func testLexerInput(input string, tests []expectedTestToken, t *testing.T) {
 	for i, tt := range tests {
 		tok, err := l.NextToken()
 		require.Nil(t, err, "[%d] token lexer error", i)
-		require.Equal(t, tt.expectedType, tok.Type, "[%d] token type wrong", i)
+		require.Equal(t, tt.expectedType, tok.ID, "[%d] token type wrong", i)
 		require.Equal(t, tt.expectedValue, tok.Value, "[%d] token value wrong", i)
 	}
 }

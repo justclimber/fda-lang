@@ -32,7 +32,7 @@ func (l *Lexer) fetch(line, pos int) {
 func ParseString(s string) ([]Token, error) {
 	l := NewLexer(s)
 	tokens := make([]Token, 0)
-	for t, err := l.NextToken(); t.Type != TokenEOC; {
+	for t, err := l.NextToken(); t.ID != TokenEOC; {
 		if err != nil {
 			return nil, err
 		}
@@ -75,7 +75,7 @@ func (l *Lexer) NextToken() (Token, error) {
 	currToken.Col = l.pos
 	currToken.Pos = l.currPosition
 
-	simpleTokens := []string{
+	simpleTokens := []TokenID{
 		TokenComma,
 		TokenColon,
 		TokenQuestion,
@@ -93,8 +93,8 @@ func (l *Lexer) NextToken() (Token, error) {
 		TokenGt,
 	}
 	for _, simpleToken := range simpleTokens {
-		if string(l.currChar) == simpleToken {
-			currToken.Type = TokenID(simpleToken)
+		if string(l.currChar) == string(simpleToken) {
+			currToken.ID = simpleToken
 			currToken.Value = string(l.currChar)
 			l.read()
 			return currToken, nil
@@ -104,64 +104,62 @@ func (l *Lexer) NextToken() (Token, error) {
 	switch l.currChar {
 	case '\n':
 		currToken.Value = ""
-		currToken.Type = TokenEOL
+		currToken.ID = TokenEOL
 	case '=':
 		if l.nextChar == '=' {
-			currToken.Value = TokenEq
-			currToken.Type = TokenEq
+			currToken.ID = TokenEq
+			currToken.Value = string(TokenEq)
 			l.read()
 		} else {
-			currToken.Type = TokenAssignment
-			currToken.Value = string(l.currChar)
+			currToken.ID = TokenAssignment
+			currToken.Value = string(TokenAssignment)
 		}
 	case '!':
 		if l.nextChar == '=' {
-			currToken.Value = TokenNotEq
-			currToken.Type = TokenNotEq
+			currToken.ID = TokenNotEq
+			currToken.Value = string(TokenNotEq)
 			l.read()
 		} else {
-			currToken.Type = TokenNot
-			currToken.Value = string(l.currChar)
+			currToken.ID = TokenNot
+			currToken.Value = string(TokenNot)
 		}
 	case '&':
-		if l.nextChar == '&' {
-			currToken.Value = TokenAnd
-			currToken.Type = TokenAnd
-			l.read()
-		} else {
+		if l.nextChar != '&' {
 			return currToken, l.error("Unexpected one `&`. Did you mean '&&'?")
 		}
+		currToken.ID = TokenAnd
+		currToken.Value = string(TokenAnd)
+		l.read()
 	case '|':
-		if l.nextChar == '|' {
-			currToken.Value = TokenOr
-			currToken.Type = TokenOr
-			l.read()
-		} else {
+		if l.nextChar != '|' {
 			return currToken, l.error("Unexpected one `|`. Did you mean '||'?")
 		}
+		currToken.ID = TokenOr
+		currToken.Value = string(TokenOr)
+		l.read()
 	case '/':
 		if l.nextChar == '/' {
 			l.consumeComment()
 			return l.NextToken()
 		} else {
-			currToken.Value = TokenSlash
-			currToken.Type = TokenSlash
+			currToken.ID = TokenSlash
+			currToken.Value = string(TokenSlash)
 		}
 	case 0:
 		currToken.Value = ""
-		currToken.Type = TokenEOC
+		currToken.ID = TokenEOC
 	default:
 		if isDigit(l.currChar) {
 			value, isInt := l.readNumber()
 			currToken.Value = value
 			if isInt {
-				currToken.Type = TokenNumInt
+				currToken.ID = TokenNumInt
 			} else {
-				currToken.Type = TokenNumFloat
+				currToken.ID = TokenNumFloat
 			}
 		} else if unicode.IsLetter(l.currChar) {
 			currToken.Value = l.readIdentifier()
-			currToken.Type = LookupIdent(currToken.Value)
+			currToken.ID = LookupIdent(currToken.Value)
 		} else {
 			return currToken, l.error("Unexpected symbol: '%c'", l.currChar)
 		}

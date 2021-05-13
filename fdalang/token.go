@@ -6,63 +6,63 @@ import (
 )
 
 const (
-	TokenEOL = "enf of line"
-	TokenEOC = "end of code"
+	TokenEOL TokenID = "enf of line"
+	TokenEOC TokenID = "end of code"
 
-	TokenAssignment = "="
-	TokenComma      = ","
-	TokenDot        = "."
-	TokenColon      = ":"
-	TokenQuestion   = "?"
+	TokenAssignment TokenID = "="
+	TokenComma      TokenID = ","
+	TokenDot        TokenID = "."
+	TokenColon      TokenID = ":"
+	TokenQuestion   TokenID = "?"
 
 	// arithmetical operators
-	TokenPlus     = "+"
-	TokenMinus    = "-"
-	TokenAsterisk = "*"
-	TokenSlash    = "/"
+	TokenPlus     TokenID = "+"
+	TokenMinus    TokenID = "-"
+	TokenAsterisk TokenID = "*"
+	TokenSlash    TokenID = "/"
 
 	// logical operators
-	TokenLt    = "<"
-	TokenGt    = ">"
-	TokenEq    = "=="
-	TokenNotEq = "!="
-	TokenNot   = "!"
-	TokenAnd   = "&&"
-	TokenOr    = "||"
+	TokenLt    TokenID = "<"
+	TokenGt    TokenID = ">"
+	TokenEq    TokenID = "=="
+	TokenNotEq TokenID = "!="
+	TokenNot   TokenID = "!"
+	TokenAnd   TokenID = "&&"
+	TokenOr    TokenID = "||"
 
-	TokenNumInt   = "int_num"
-	TokenNumFloat = "float_num"
+	TokenNumInt   TokenID = "int_num"
+	TokenNumFloat TokenID = "float_num"
 
-	TokenLParen   = "("
-	TokenRParen   = ")"
-	TokenLBrace   = "{"
-	TokenRBrace   = "}"
-	TokenLBracket = "["
-	TokenRBracket = "]"
+	TokenLParen   TokenID = "("
+	TokenRParen   TokenID = ")"
+	TokenLBrace   TokenID = "{"
+	TokenRBrace   TokenID = "}"
+	TokenLBracket TokenID = "["
+	TokenRBracket TokenID = "]"
 
-	TokenIdent = "ident"
+	TokenIdent TokenID = "ident"
 
 	// keywords
-	TokenStruct   = "struct"
-	TokenEnum     = "enum"
-	TokenFunction = "fn"
-	TokenReturn   = "return"
-	TokenTrue     = "true"
-	TokenFalse    = "false"
-	TokenIf       = "if"
-	TokenElse     = "else"
-	TokenSwitch   = "switch"
-	TokenCase     = "case"
-	TokenDefault  = "default"
+	TokenStruct   TokenID = "struct"
+	TokenEnum     TokenID = "enum"
+	TokenFunction TokenID = "fn"
+	TokenReturn   TokenID = "return"
+	TokenTrue     TokenID = "true"
+	TokenFalse    TokenID = "false"
+	TokenIf       TokenID = "if"
+	TokenElse     TokenID = "else"
+	TokenSwitch   TokenID = "switch"
+	TokenCase     TokenID = "case"
+	TokenDefault  TokenID = "default"
 
 	// type hints
-	TokenType = "type"
+	TokenType TokenID = "type"
 )
 
 type TokenID string
 
 type Token struct {
-	Type  TokenID
+	ID    TokenID
 	Value string
 	Line  int
 	Col   int

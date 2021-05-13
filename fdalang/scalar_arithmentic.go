@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func execScalarBinOperation(left, right Object, operator string) (Object, error) {
+func execScalarBinOperation(left, right Object, operator TokenID) (Object, error) {
 	if left.Type() == TypeInt {
 		left, _ := left.(*ObjInteger)
 		right, _ := right.(*ObjInteger)
@@ -32,7 +32,7 @@ func execScalarBinOperation(left, right Object, operator string) (Object, error)
 	return nil, fmt.Errorf("unsupported operator '%s' for type: '%s'", operator, left.Type())
 }
 
-func integerBinOperation(left, right *ObjInteger, operator string) (Object, error) {
+func integerBinOperation(left, right *ObjInteger, operator TokenID) (Object, error) {
 	switch operator {
 	case TokenPlus:
 		return &ObjInteger{Value: left.Value + right.Value}, nil
@@ -62,7 +62,7 @@ func nativeBooleanToBoolean(value bool) *ObjBoolean {
 	return ReservedObjFalse
 }
 
-func floatBinOperation(left, right *ObjFloat, operator string) (Object, error) {
+func floatBinOperation(left, right *ObjFloat, operator TokenID) (Object, error) {
 	switch operator {
 	case TokenPlus:
 		return &ObjFloat{Value: left.Value + right.Value}, nil
@@ -85,7 +85,7 @@ func floatBinOperation(left, right *ObjFloat, operator string) (Object, error) {
 	}
 }
 
-func booleanBinOperation(left, right *ObjBoolean, operator string) (Object, error) {
+func booleanBinOperation(left, right *ObjBoolean, operator TokenID) (Object, error) {
 	switch operator {
 	case TokenEq:
 		return nativeBooleanToBoolean(left.Value == right.Value), nil

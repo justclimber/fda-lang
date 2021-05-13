@@ -43,7 +43,7 @@ func (e *ExecAstVisitor) setupBasicBuiltinFunctions() {
 			case *ObjArray:
 				return nativeBooleanToBoolean(arg.Empty), nil
 			default:
-				return nil, BuiltinFuncError("Type '%T' doesn't support emptiness", arg)
+				return nil, BuiltinFuncError("ID '%T' doesn't support emptiness", arg)
 			}
 		},
 	}
