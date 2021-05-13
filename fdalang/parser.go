@@ -41,8 +41,8 @@ var precedences = map[TokenID]int{
 }
 
 type (
-	unaryExprFunction func([]TokenID) (IExpression, error)
-	binExprFunctions  func(IExpression, []TokenID) (IExpression, error)
+	unaryExprFunction func([]TokenID) (Expression, error)
+	binExprFunctions  func(Expression, []TokenID) (Expression, error)
 )
 
 type Parser struct {
@@ -143,8 +143,8 @@ func (p *Parser) Parse() (*StatementsBlock, error) {
 	return program, err
 }
 
-func (p *Parser) parseBlockOfStatements(terminatedTokens []TokenID) ([]IStatement, error) {
-	var statements []IStatement
+func (p *Parser) parseBlockOfStatements(terminatedTokens []TokenID) ([]Statement, error) {
+	var statements []Statement
 
 	for !p.currTokenIn(terminatedTokens) {
 		stmt, err := p.parseStatement()
@@ -161,24 +161,10 @@ func (p *Parser) parseBlockOfStatements(terminatedTokens []TokenID) ([]IStatemen
 	return statements, nil
 }
 
-func (p *Parser) parseStatement() (IStatement, error) {
+func (p *Parser) parseStatement() (Statement, error) {
 	switch p.currToken.Type {
 	case TokenIdent:
-		if p.nextToken.Type == TokenLParen {
-			function := &Identifier{
-				Token: p.currToken,
-				Value: p.currToken.Value,
-			}
-			err := p.read()
-			if err != nil {
-				return nil, err
-			}
-			return p.parseFunctionCall(function, TokenIDs(TokenEOL))
-		} else if p.nextToken.Type == TokenDot {
-			return p.parseStructFieldAssignment(TokenIDs(TokenEOL))
-		} else {
-			return p.parseAssignment(TokenIDs(TokenEOL))
-		}
+		return p.parseStatementWithVoidedExpression()
 	case TokenReturn:
 		return p.parseReturn()
 	case TokenIf:
@@ -196,6 +182,33 @@ func (p *Parser) parseStatement() (IStatement, error) {
 	}
 }
 
+func (p *Parser) parseStatementWithVoidedExpression() (Statement, error) {
+	stmt := &StatementWithVoidedExpression{Token: p.currToken}
+	var err error
+	var expr Expression
+	if p.nextToken.Type == TokenLParen {
+		function := &Identifier{
+			Token: p.currToken,
+			Value: p.currToken.Value,
+		}
+		err = p.read()
+		if err != nil {
+			return nil, err
+		}
+
+		expr, err = p.parseFunctionCall(function, TokenIDs(TokenEOL))
+	} else if p.nextToken.Type == TokenDot {
+		expr, err = p.parseStructFieldAssignment(TokenIDs(TokenEOL))
+	} else {
+		expr, err = p.parseAssignment(TokenIDs(TokenEOL))
+	}
+	if err != nil {
+		return nil, err
+	}
+	stmt.Expr = expr
+	return stmt, nil
+}
+
 func (p *Parser) parseStructFieldAssignment(terminatedTokens []TokenID) (*StructFieldAssignment, error) {
 	assignStmt := &StructFieldAssignment{Token: p.currToken}
 
@@ -204,7 +217,7 @@ func (p *Parser) parseStructFieldAssignment(terminatedTokens []TokenID) (*Struct
 		return nil, err
 	}
 
-	var leftWithFieldCall IExpression
+	var leftWithFieldCall Expression
 	leftWithFieldCall = left
 
 	// nested structs can be here
@@ -283,8 +296,8 @@ func (p *Parser) parseAssignment(terminatedTokens []TokenID) (*Assignment, error
 	return assignStmt, nil
 }
 
-func (p *Parser) parseReturn() (*Return, error) {
-	stmt := &Return{Token: p.currToken}
+func (p *Parser) parseReturn() (*ReturnStatement, error) {
+	stmt := &ReturnStatement{Token: p.currToken}
 	var err error
 	if err = p.read(); err != nil {
 		return nil, err
@@ -299,7 +312,7 @@ func (p *Parser) parseReturn() (*Return, error) {
 	return stmt, nil
 }
 
-func (p *Parser) parseExpression(precedence int, terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseExpression(precedence int, terminatedTokens []TokenID) (Expression, error) {
 	unaryFunction := p.unaryExprFunctions[p.currToken.Type]
 	if unaryFunction == nil {
 		err := p.parseError("no Unary parse function for %s found", p.currToken.Type)
@@ -315,10 +328,10 @@ func (p *Parser) parseExpression(precedence int, terminatedTokens []TokenID) (IE
 }
 
 func (p *Parser) parseRightPartOfExpression(
-	leftExpr IExpression,
+	leftExpr Expression,
 	precedence int,
 	terminatedTokens []TokenID,
-) (IExpression, error) {
+) (Expression, error) {
 	var err error
 	nextPrecedence := p.nextPrecedence()
 	for !p.nextTokenIn(terminatedTokens) && precedence < nextPrecedence {
@@ -340,7 +353,7 @@ func (p *Parser) parseRightPartOfExpression(
 	return leftExpr, nil
 }
 
-func (p *Parser) parseIdentifierAsExpression(terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseIdentifierAsExpression(terminatedTokens []TokenID) (Expression, error) {
 	_, err := p.getExpectedToken(TokenIdent)
 	if err != nil {
 		return nil, err
@@ -360,7 +373,7 @@ func (p *Parser) parseIdentifier(terminatedTokens []TokenID) (*Identifier, error
 	return ident, nil
 }
 
-func (p *Parser) parseInteger(terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseInteger(terminatedTokens []TokenID) (Expression, error) {
 	node := &NumInt{Token: p.currToken}
 
 	value, err := strconv.ParseInt(p.currToken.Value, 0, 64)
@@ -373,7 +386,7 @@ func (p *Parser) parseInteger(terminatedTokens []TokenID) (IExpression, error) {
 	return node, nil
 }
 
-func (p *Parser) parseUnaryExpression(terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseUnaryExpression(terminatedTokens []TokenID) (Expression, error) {
 	node := &UnaryExpression{
 		Token:    p.currToken,
 		Operator: p.currToken.Value,
@@ -390,7 +403,7 @@ func (p *Parser) parseUnaryExpression(terminatedTokens []TokenID) (IExpression, 
 	return node, err
 }
 
-func (p *Parser) parseEmptierExpression(terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseEmptierExpression(terminatedTokens []TokenID) (Expression, error) {
 	node := &EmptierExpression{Token: p.currToken, IsArray: false}
 	if err := p.read(); err != nil {
 		return nil, err
@@ -414,7 +427,7 @@ func (p *Parser) parseEmptierExpression(terminatedTokens []TokenID) (IExpression
 	return node, nil
 }
 
-func (p *Parser) parseReal(terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseReal(terminatedTokens []TokenID) (Expression, error) {
 	node := &NumFloat{Token: p.currToken}
 
 	value, err := strconv.ParseFloat(p.currToken.Value, 64)
@@ -427,7 +440,7 @@ func (p *Parser) parseReal(terminatedTokens []TokenID) (IExpression, error) {
 	return node, nil
 }
 
-func (p *Parser) parseBinExpression(left IExpression, terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseBinExpression(left Expression, terminatedTokens []TokenID) (Expression, error) {
 	expression := &BinExpression{
 		Token:    p.currToken,
 		Operator: p.currToken.Value,
@@ -447,7 +460,7 @@ func (p *Parser) parseBinExpression(left IExpression, terminatedTokens []TokenID
 	return expression, nil
 }
 
-func (p *Parser) parseSwitchStatement() (IExpression, error) {
+func (p *Parser) parseSwitchStatement() (Statement, error) {
 	stmt := &Switch{Token: p.currToken}
 
 	var err error
@@ -518,7 +531,7 @@ func (p *Parser) parseSwitchStatement() (IExpression, error) {
 	return stmt, nil
 }
 
-func (p *Parser) parseIfStatement() (IExpression, error) {
+func (p *Parser) parseIfStatement() (Statement, error) {
 	stmt := &IfStatement{Token: p.currToken}
 
 	var err error
@@ -565,7 +578,7 @@ func (p *Parser) parseIfStatement() (IExpression, error) {
 	return stmt, err
 }
 
-func (p *Parser) parseStructDefinition() (IExpression, error) {
+func (p *Parser) parseStructDefinition() (Statement, error) {
 	node := &StructDefinition{Token: p.currToken}
 
 	if err := p.read(); err != nil {
@@ -603,7 +616,7 @@ func (p *Parser) parseStructDefinition() (IExpression, error) {
 	return node, nil
 }
 
-func (p *Parser) parseFunction(terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseFunction(terminatedTokens []TokenID) (Expression, error) {
 	function := &Function{Token: p.currToken}
 
 	err := p.read()
@@ -700,7 +713,7 @@ func (p *Parser) parseVarAndTypes(endToken TokenID, delimiterToken TokenID) ([]*
 	return vars, nil
 }
 
-func (p *Parser) parseFunctionCall(function IExpression, terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseFunctionCall(function Expression, terminatedTokens []TokenID) (Expression, error) {
 	functionCall := &FunctionCall{
 		Token:    p.currToken,
 		Function: function,
@@ -715,8 +728,8 @@ func (p *Parser) parseFunctionCall(function IExpression, terminatedTokens []Toke
 	return functionCall, err
 }
 
-func (p *Parser) parseExpressions(closeTokens []TokenID) ([]IExpression, error) {
-	var expressions []IExpression
+func (p *Parser) parseExpressions(closeTokens []TokenID) ([]Expression, error) {
+	var expressions []Expression
 
 	for !p.currTokenIn(closeTokens) {
 		expression, err := p.parseExpression(PriorityLowest, append(closeTokens, TokenComma))
@@ -738,7 +751,7 @@ func (p *Parser) parseExpressions(closeTokens []TokenID) ([]IExpression, error) 
 	return expressions, nil
 }
 
-func (p *Parser) parseGroupedExpression(terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseGroupedExpression(terminatedTokens []TokenID) (Expression, error) {
 	err := p.read()
 	if err != nil {
 		return nil, err
@@ -759,14 +772,14 @@ func (p *Parser) parseGroupedExpression(terminatedTokens []TokenID) (IExpression
 	return expression, nil
 }
 
-func (p *Parser) parseBoolean(terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseBoolean(terminatedTokens []TokenID) (Expression, error) {
 	return &Boolean{
 		Token: p.currToken,
 		Value: p.currToken.Type == TokenTrue,
 	}, nil
 }
 
-func (p *Parser) parseArray(terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseArray(terminatedTokens []TokenID) (Expression, error) {
 	node := &Array{Token: p.currToken}
 
 	var err error
@@ -789,7 +802,7 @@ func (p *Parser) parseArray(terminatedTokens []TokenID) (IExpression, error) {
 		return nil, err
 	}
 
-	var elementExpressions []IExpression
+	var elementExpressions []Expression
 	if p.currToken.Type == TokenLBrace {
 		if err = p.read(); err != nil {
 			return nil, err
@@ -805,7 +818,7 @@ func (p *Parser) parseArray(terminatedTokens []TokenID) (IExpression, error) {
 	return node, nil
 }
 
-func (p *Parser) parseArrayIndexCall(array IExpression, terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseArrayIndexCall(array Expression, terminatedTokens []TokenID) (Expression, error) {
 	node := &ArrayIndexCall{
 		Token: p.currToken,
 		Left:  array,
@@ -830,9 +843,9 @@ func (p *Parser) parseArrayIndexCall(array IExpression, terminatedTokens []Token
 }
 
 func (p *Parser) parseStructExpression(
-	expr IExpression,
+	expr Expression,
 	terminatedTokens []TokenID,
-) (IExpression, error) {
+) (Expression, error) {
 	ident, ok := expr.(*Identifier)
 	if !ok {
 		return nil, p.parseError("Struct operator should only on identifiers, but '%T'", expr)
@@ -863,7 +876,7 @@ func (p *Parser) parseStructExpression(
 	return node, nil
 }
 
-func (p *Parser) parseStructFieldCall(expr IExpression, terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseStructFieldCall(expr Expression, terminatedTokens []TokenID) (Expression, error) {
 	node := &StructFieldCall{
 		Token:      p.currToken,
 		StructExpr: expr,
@@ -881,7 +894,7 @@ func (p *Parser) parseStructFieldCall(expr IExpression, terminatedTokens []Token
 	return node, nil
 }
 
-func (p *Parser) parseEnumDefinition() (IExpression, error) {
+func (p *Parser) parseEnumDefinition() (Statement, error) {
 	node := &EnumDefinition{Token: p.currToken}
 
 	if err := p.read(); err != nil {
@@ -926,7 +939,7 @@ func (p *Parser) parseEnumDefinition() (IExpression, error) {
 	return node, nil
 }
 
-func (p *Parser) parseEnumExpression(expr IExpression, terminatedTokens []TokenID) (IExpression, error) {
+func (p *Parser) parseEnumExpression(expr Expression, terminatedTokens []TokenID) (Expression, error) {
 	node := &EnumElementCall{
 		Token:    p.currToken,
 		EnumExpr: expr,

@@ -61,7 +61,7 @@ func arrayElementsTypeCheck(node *Array, t string, es []Object) error {
 func functionReturnTypeCheck(node *FunctionCall, result Object, functionReturnType string) error {
 	if result.Type() != ObjectType(functionReturnType) {
 		return runtimeError(node,
-			"Return type mismatch: function declared as '%s' but in fact return '%s'",
+			"ReturnStatement type mismatch: function declared as '%s' but in fact return '%s'",
 			functionReturnType, result.Type())
 	}
 	return nil
@@ -95,7 +95,7 @@ func transferArgsToNewEnv(fn *ObjFunction, args []Object) *Environment {
 	return env
 }
 
-func runtimeError(node INode, format string, args ...interface{}) error {
+func runtimeError(node Node, format string, args ...interface{}) error {
 	msg := fmt.Sprintf(format, args...)
 	t := node.GetToken()
 	return errors.New(fmt.Sprintf("%s\nline:%d, pos %d", msg, t.Line, t.Col))

@@ -59,52 +59,43 @@ func (e *ExecAstVisitor) ExecAst(ast *StatementsBlock, env *Environment) error {
 	return nil
 }
 
-func (e *ExecAstVisitor) execStatementsBlock(node *StatementsBlock, env *Environment) (Object, error) {
+func (e *ExecAstVisitor) execStatementsBlock(node *StatementsBlock, env *Environment) (*ObjReturnValue, error) {
 	for _, statement := range node.Statements {
-		result, err := e.execStatement(statement, env)
-		if err != nil {
-			return nil, err
+		returnValue, err := e.execStatement(statement, env)
+		if returnValue != nil || err != nil {
+			return returnValue, err
 		}
-		if returnStmt, ok := result.(*ObjReturnValue); ok {
-			return returnStmt, nil
-		}
-		// if result is not return - ignore. Statements not return anything else
 	}
 
 	return nil, nil
 }
 
-func (e *ExecAstVisitor) execStatement(node IStatement, env *Environment) (Object, error) {
+func (e *ExecAstVisitor) execStatement(node Statement, env *Environment) (*ObjReturnValue, error) {
 	switch astNode := node.(type) {
-	case *Assignment:
-		return e.execAssignment(astNode, env)
-	case *StructFieldAssignment:
-		return e.execStructFieldAssignment(astNode, env)
-	case *Return:
+	case *StatementWithVoidedExpression:
+		_, err := e.execExpression(astNode.Expr, env)
+		return nil, err
+	case *ReturnStatement:
 		return e.execReturn(astNode, env)
 	case *IfStatement:
 		return e.execIfStatement(astNode, env)
 	case *Switch:
 		return e.execSwitch(astNode, env)
-	case *FunctionCall:
-		return e.execFunctionCall(astNode, env)
 	case *StructDefinition:
-		if err := registerStructDefinition(astNode, env); err != nil {
-			return nil, err
-		}
-		return nil, nil
+		return nil, registerStructDefinition(astNode, env)
 	case *EnumDefinition:
-		if err := registerEnumDefinition(astNode, env); err != nil {
-			return nil, err
-		}
-		return nil, nil
+		return nil, registerEnumDefinition(astNode, env)
 	default:
 		return nil, runtimeError(node, "Unexpected node for statement: %T", node)
 	}
 }
 
-func (e *ExecAstVisitor) execExpression(node IExpression, env *Environment) (Object, error) {
+func (e *ExecAstVisitor) execExpression(node Expression, env *Environment) (Object, error) {
 	switch astNode := node.(type) {
+	case *Assignment:
+		return e.execAssignment(astNode, env)
+	case *StructFieldAssignment:
+		return e.execStructFieldAssignment(astNode, env)
 	case *UnaryExpression:
 		return e.execUnaryExpression(astNode, env)
 	case *EmptierExpression:
@@ -118,11 +109,11 @@ func (e *ExecAstVisitor) execExpression(node IExpression, env *Environment) (Obj
 	case *EnumElementCall:
 		return e.execEnumElementCall(astNode, env)
 	case *NumInt:
-		return e.execNumInt(astNode, env)
+		return e.execNumInt(astNode)
 	case *NumFloat:
-		return e.execNumFloat(astNode, env)
+		return e.execNumFloat(astNode)
 	case *Boolean:
-		return e.execBoolean(astNode, env)
+		return e.execBoolean(astNode)
 	case *Array:
 		return e.execArray(astNode, env)
 	case *ArrayIndexCall:
@@ -277,7 +268,7 @@ func (e *ExecAstVisitor) execIdentifier(node *Identifier, env *Environment) (Obj
 	return nil, runtimeError(node, "identifier not found: "+node.Value)
 }
 
-func (e *ExecAstVisitor) execReturn(node *Return, env *Environment) (Object, error) {
+func (e *ExecAstVisitor) execReturn(node *ReturnStatement, env *Environment) (*ObjReturnValue, error) {
 	e.execCallback(Operation{Type: OperationReturn})
 	value, err := e.execExpression(node.ReturnValue, env)
 	return &ObjReturnValue{Value: value}, err
@@ -314,15 +305,16 @@ func (e *ExecAstVisitor) execFunctionCall(node *FunctionCall, env *Environment) 
 
 		// todo: what is fn.Env?
 		functionEnv := transferArgsToNewEnv(fn, args)
-		result, err := e.execStatementsBlock(fn.Statements, functionEnv)
+		statementsBlockResult, err := e.execStatementsBlock(fn.Statements, functionEnv)
 		if err != nil {
 			return nil, err
 		}
 
-		if result == nil {
+		var result Object
+		if statementsBlockResult == nil {
 			result = &ObjVoid{}
-		} else if result.Type() == TypeReturnValue {
-			result = result.(*ObjReturnValue).Value
+		} else {
+			result = statementsBlockResult.Value
 		}
 
 		if err = functionReturnTypeCheck(node, result, fn.ReturnType); err != nil {
@@ -351,7 +343,7 @@ func (e *ExecAstVisitor) execFunctionCall(node *FunctionCall, env *Environment) 
 		return nil, runtimeError(node, "not a function: %s", fn.Type())
 	}
 }
-func (e *ExecAstVisitor) execExpressionList(expressions []IExpression, env *Environment) ([]Object, error) {
+func (e *ExecAstVisitor) execExpressionList(expressions []Expression, env *Environment) ([]Object, error) {
 	var result []Object
 
 	for _, expr := range expressions {
@@ -365,7 +357,7 @@ func (e *ExecAstVisitor) execExpressionList(expressions []IExpression, env *Envi
 	return result, nil
 }
 
-func (e *ExecAstVisitor) execIfStatement(node *IfStatement, env *Environment) (Object, error) {
+func (e *ExecAstVisitor) execIfStatement(node *IfStatement, env *Environment) (*ObjReturnValue, error) {
 	e.execCallback(Operation{Type: OperationIfStmt})
 	condition, err := e.execExpression(node.Condition, env)
 	if err != nil {
@@ -513,7 +505,7 @@ func (e *ExecAstVisitor) execEnumElementCall(node *EnumElementCall, env *Environ
 	return enumObj, nil
 }
 
-func (e *ExecAstVisitor) execSwitch(node *Switch, env *Environment) (Object, error) {
+func (e *ExecAstVisitor) execSwitch(node *Switch, env *Environment) (*ObjReturnValue, error) {
 	e.execCallback(Operation{Type: OperationSwitch})
 	for _, c := range node.Cases {
 		condition, err := e.execExpression(c.Condition, env)
@@ -526,39 +518,26 @@ func (e *ExecAstVisitor) execSwitch(node *Switch, env *Environment) (Object, err
 		}
 		conditionResult, _ := condition.(*ObjBoolean)
 		if conditionResult.Value {
-			result, err := e.execStatementsBlock(c.PositiveBranch, env)
-			if err != nil {
-				return nil, err
-			}
-			if result != nil && result.Type() == TypeReturnValue {
-				return result, nil
-			}
-			return &ObjVoid{}, nil
+			return e.execStatementsBlock(c.PositiveBranch, env)
 		}
 	}
 	if node.DefaultBranch != nil {
-		result, err := e.execStatementsBlock(node.DefaultBranch, env)
-		if err != nil {
-			return nil, err
-		}
-		if result != nil && result.Type() == TypeReturnValue {
-			return result, nil
-		}
+		return e.execStatementsBlock(node.DefaultBranch, env)
 	}
-	return &ObjVoid{}, nil
+	return nil, nil
 }
 
-func (e *ExecAstVisitor) execNumInt(node *NumInt, env *Environment) (Object, error) {
+func (e *ExecAstVisitor) execNumInt(node *NumInt) (Object, error) {
 	e.execCallback(Operation{Type: OperationNumInt})
 	return &ObjInteger{Value: node.Value}, nil
 }
 
-func (e *ExecAstVisitor) execNumFloat(node *NumFloat, env *Environment) (Object, error) {
+func (e *ExecAstVisitor) execNumFloat(node *NumFloat) (Object, error) {
 	e.execCallback(Operation{Type: OperationNumFloat})
 	return &ObjFloat{Value: node.Value}, nil
 }
 
-func (e *ExecAstVisitor) execBoolean(node *Boolean, env *Environment) (Object, error) {
+func (e *ExecAstVisitor) execBoolean(node *Boolean) (Object, error) {
 	e.execCallback(Operation{Type: OperationBoolean})
 	return nativeBooleanToBoolean(node.Value), nil
 }
