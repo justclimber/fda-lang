@@ -20,6 +20,8 @@ m = mech{p = point{x = 1., y = 2.}}
 
 px = m.p.x
 
+m.p.x = 2.3
+
 a = 10
 
 switch {
