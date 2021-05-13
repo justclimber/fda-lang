@@ -41,8 +41,8 @@ var precedences = map[TokenID]int{
 }
 
 type (
-	unaryExprFunction func([]TokenID) (Expression, error)
-	binExprFunctions  func(Expression, []TokenID) (Expression, error)
+	unaryExprFunction func([]TokenID) (AstExpression, error)
+	binExprFunctions  func(AstExpression, []TokenID) (AstExpression, error)
 )
 
 type Parser struct {
@@ -134,8 +134,8 @@ func (p *Parser) back() {
 	_ = p.read()
 }
 
-func (p *Parser) Parse() (*StatementsBlock, error) {
-	program := &StatementsBlock{}
+func (p *Parser) Parse() (*AstStatementsBlock, error) {
+	program := &AstStatementsBlock{}
 
 	statements, err := p.parseBlockOfStatements(TokenIDs(TokenEOF))
 	program.Statements = statements
@@ -143,8 +143,8 @@ func (p *Parser) Parse() (*StatementsBlock, error) {
 	return program, err
 }
 
-func (p *Parser) parseBlockOfStatements(terminatedTokens []TokenID) ([]Statement, error) {
-	var statements []Statement
+func (p *Parser) parseBlockOfStatements(terminatedTokens []TokenID) ([]AstStatement, error) {
+	var statements []AstStatement
 
 	for !p.currTokenIn(terminatedTokens) {
 		stmt, err := p.parseStatement()
@@ -161,7 +161,7 @@ func (p *Parser) parseBlockOfStatements(terminatedTokens []TokenID) ([]Statement
 	return statements, nil
 }
 
-func (p *Parser) parseStatement() (Statement, error) {
+func (p *Parser) parseStatement() (AstStatement, error) {
 	switch p.currToken.Type {
 	case TokenIdent:
 		return p.parseStatementWithVoidedExpression()
@@ -182,12 +182,12 @@ func (p *Parser) parseStatement() (Statement, error) {
 	}
 }
 
-func (p *Parser) parseStatementWithVoidedExpression() (Statement, error) {
-	stmt := &StatementWithVoidedExpression{Token: p.currToken}
+func (p *Parser) parseStatementWithVoidedExpression() (AstStatement, error) {
+	stmt := &AstStatementWithVoidedExpression{Token: p.currToken}
 	var err error
-	var expr Expression
+	var expr AstExpression
 	if p.nextToken.Type == TokenLParen {
-		function := &Identifier{
+		function := &AstIdentifier{
 			Token: p.currToken,
 			Value: p.currToken.Value,
 		}
@@ -209,15 +209,15 @@ func (p *Parser) parseStatementWithVoidedExpression() (Statement, error) {
 	return stmt, nil
 }
 
-func (p *Parser) parseStructFieldAssignment(terminatedTokens []TokenID) (*StructFieldAssignment, error) {
-	assignStmt := &StructFieldAssignment{Token: p.currToken}
+func (p *Parser) parseStructFieldAssignment(terminatedTokens []TokenID) (*AstStructFieldAssignment, error) {
+	assignStmt := &AstStructFieldAssignment{Token: p.currToken}
 
 	left, err := p.parseIdentifier(terminatedTokens)
 	if err != nil {
 		return nil, err
 	}
 
-	var leftWithFieldCall Expression
+	var leftWithFieldCall AstExpression
 	leftWithFieldCall = left
 
 	// nested structs can be here
@@ -226,7 +226,7 @@ func (p *Parser) parseStructFieldAssignment(terminatedTokens []TokenID) (*Struct
 			return nil, err
 		}
 
-		if _, err = p.getExpectedToken(TokenDot); err != nil {
+		if _, err = p.expectedToken(TokenDot); err != nil {
 			return nil, err
 		}
 
@@ -235,13 +235,13 @@ func (p *Parser) parseStructFieldAssignment(terminatedTokens []TokenID) (*Struct
 			return nil, err
 		}
 	}
-	assignStmt.Left = leftWithFieldCall.(*StructFieldCall)
+	assignStmt.Left = leftWithFieldCall.(*AstStructFieldCall)
 
 	if err = p.read(); err != nil {
 		return nil, err
 	}
 
-	if _, err = p.getExpectedToken(TokenAssignment); err != nil {
+	if _, err = p.expectedToken(TokenAssignment); err != nil {
 		return nil, err
 	}
 
@@ -257,15 +257,15 @@ func (p *Parser) parseStructFieldAssignment(terminatedTokens []TokenID) (*Struct
 		return nil, err
 	}
 
-	if _, err = p.getExpectedTokens(terminatedTokens); err != nil {
+	if _, err = p.expectedTokens(terminatedTokens); err != nil {
 		return nil, err
 	}
 
 	return assignStmt, nil
 }
 
-func (p *Parser) parseAssignment(terminatedTokens []TokenID) (*Assignment, error) {
-	assignStmt := &Assignment{Token: p.currToken}
+func (p *Parser) parseAssignment(terminatedTokens []TokenID) (*AstAssignment, error) {
+	assignStmt := &AstAssignment{Token: p.currToken}
 	identStmt, err := p.parseIdentifier(terminatedTokens)
 	if err != nil {
 		return nil, err
@@ -275,7 +275,7 @@ func (p *Parser) parseAssignment(terminatedTokens []TokenID) (*Assignment, error
 	if err = p.read(); err != nil {
 		return nil, err
 	}
-	if _, err = p.getExpectedToken(TokenAssignment); err != nil {
+	if _, err = p.expectedToken(TokenAssignment); err != nil {
 		return nil, err
 	}
 	if err = p.read(); err != nil {
@@ -289,15 +289,15 @@ func (p *Parser) parseAssignment(terminatedTokens []TokenID) (*Assignment, error
 		return nil, err
 	}
 
-	if _, err = p.getExpectedTokens(terminatedTokens); err != nil {
+	if _, err = p.expectedTokens(terminatedTokens); err != nil {
 		return nil, err
 	}
 
 	return assignStmt, nil
 }
 
-func (p *Parser) parseReturn() (*ReturnStatement, error) {
-	stmt := &ReturnStatement{Token: p.currToken}
+func (p *Parser) parseReturn() (*AstReturn, error) {
+	stmt := &AstReturn{Token: p.currToken}
 	var err error
 	if err = p.read(); err != nil {
 		return nil, err
@@ -312,7 +312,7 @@ func (p *Parser) parseReturn() (*ReturnStatement, error) {
 	return stmt, nil
 }
 
-func (p *Parser) parseExpression(precedence int, terminatedTokens []TokenID) (Expression, error) {
+func (p *Parser) parseExpression(precedence int, terminatedTokens []TokenID) (AstExpression, error) {
 	unaryFunction := p.unaryExprFunctions[p.currToken.Type]
 	if unaryFunction == nil {
 		err := p.parseError("no Unary parse function for %s found", p.currToken.Type)
@@ -328,10 +328,10 @@ func (p *Parser) parseExpression(precedence int, terminatedTokens []TokenID) (Ex
 }
 
 func (p *Parser) parseRightPartOfExpression(
-	leftExpr Expression,
+	leftExpr AstExpression,
 	precedence int,
 	terminatedTokens []TokenID,
-) (Expression, error) {
+) (AstExpression, error) {
 	var err error
 	nextPrecedence := p.nextPrecedence()
 	for !p.nextTokenIn(terminatedTokens) && precedence < nextPrecedence {
@@ -353,28 +353,28 @@ func (p *Parser) parseRightPartOfExpression(
 	return leftExpr, nil
 }
 
-func (p *Parser) parseIdentifierAsExpression(terminatedTokens []TokenID) (Expression, error) {
-	_, err := p.getExpectedToken(TokenIdent)
+func (p *Parser) parseIdentifierAsExpression(terminatedTokens []TokenID) (AstExpression, error) {
+	_, err := p.expectedToken(TokenIdent)
 	if err != nil {
 		return nil, err
 	}
-	return &Identifier{
+	return &AstIdentifier{
 		Token: p.currToken,
 		Value: p.currToken.Value,
 	}, nil
 }
 
-func (p *Parser) parseIdentifier(terminatedTokens []TokenID) (*Identifier, error) {
+func (p *Parser) parseIdentifier(terminatedTokens []TokenID) (*AstIdentifier, error) {
 	expr, err := p.parseIdentifierAsExpression(terminatedTokens)
 	if err != nil {
 		return nil, err
 	}
-	ident, _ := expr.(*Identifier)
+	ident, _ := expr.(*AstIdentifier)
 	return ident, nil
 }
 
-func (p *Parser) parseInteger(terminatedTokens []TokenID) (Expression, error) {
-	node := &NumInt{Token: p.currToken}
+func (p *Parser) parseInteger(terminatedTokens []TokenID) (AstExpression, error) {
+	node := &AstNumInt{Token: p.currToken}
 
 	value, err := strconv.ParseInt(p.currToken.Value, 0, 64)
 	if err != nil {
@@ -386,8 +386,8 @@ func (p *Parser) parseInteger(terminatedTokens []TokenID) (Expression, error) {
 	return node, nil
 }
 
-func (p *Parser) parseUnaryExpression(terminatedTokens []TokenID) (Expression, error) {
-	node := &UnaryExpression{
+func (p *Parser) parseUnaryExpression(terminatedTokens []TokenID) (AstExpression, error) {
+	node := &AstUnary{
 		Token:    p.currToken,
 		Operator: p.currToken.Value,
 	}
@@ -403,13 +403,13 @@ func (p *Parser) parseUnaryExpression(terminatedTokens []TokenID) (Expression, e
 	return node, err
 }
 
-func (p *Parser) parseEmptierExpression(terminatedTokens []TokenID) (Expression, error) {
-	node := &EmptierExpression{Token: p.currToken, IsArray: false}
+func (p *Parser) parseEmptierExpression(terminatedTokens []TokenID) (AstExpression, error) {
+	node := &AstEmptier{Token: p.currToken, IsArray: false}
 	if err := p.read(); err != nil {
 		return nil, err
 	}
 
-	_, err := p.getExpectedTokens([]TokenID{TokenLBracket, TokenType, TokenIdent})
+	_, err := p.expectedTokens([]TokenID{TokenLBracket, TokenType, TokenIdent})
 	if err != nil {
 		return nil, err
 	}
@@ -427,8 +427,8 @@ func (p *Parser) parseEmptierExpression(terminatedTokens []TokenID) (Expression,
 	return node, nil
 }
 
-func (p *Parser) parseReal(terminatedTokens []TokenID) (Expression, error) {
-	node := &NumFloat{Token: p.currToken}
+func (p *Parser) parseReal(terminatedTokens []TokenID) (AstExpression, error) {
+	node := &AstNumFloat{Token: p.currToken}
 
 	value, err := strconv.ParseFloat(p.currToken.Value, 64)
 	if err != nil {
@@ -440,8 +440,8 @@ func (p *Parser) parseReal(terminatedTokens []TokenID) (Expression, error) {
 	return node, nil
 }
 
-func (p *Parser) parseBinExpression(left Expression, terminatedTokens []TokenID) (Expression, error) {
-	expression := &BinExpression{
+func (p *Parser) parseBinExpression(left AstExpression, terminatedTokens []TokenID) (AstExpression, error) {
+	expression := &AstBinOperation{
 		Token:    p.currToken,
 		Operator: p.currToken.Value,
 		Left:     left,
@@ -460,8 +460,8 @@ func (p *Parser) parseBinExpression(left Expression, terminatedTokens []TokenID)
 	return expression, nil
 }
 
-func (p *Parser) parseSwitchStatement() (Statement, error) {
-	stmt := &Switch{Token: p.currToken}
+func (p *Parser) parseSwitchStatement() (AstStatement, error) {
+	stmt := &AstSwitch{Token: p.currToken}
 
 	var err error
 	if p.nextToken.Type != TokenLBrace {
@@ -484,9 +484,9 @@ func (p *Parser) parseSwitchStatement() (Statement, error) {
 		return nil, err
 	}
 
-	cases := make([]*Case, 0)
+	cases := make([]*AstCase, 0)
 	for p.currToken.Type == TokenCase {
-		caseBlock := &Case{Token: Token{}}
+		caseBlock := &AstCase{Token: Token{}}
 
 		if stmt.SwitchExpression != nil {
 			caseBlock.Condition, err = p.parseRightPartOfExpression(
@@ -512,7 +512,7 @@ func (p *Parser) parseSwitchStatement() (Statement, error) {
 		if err != nil {
 			return nil, err
 		}
-		caseBlock.PositiveBranch = &StatementsBlock{Statements: statements}
+		caseBlock.PositiveBranch = &AstStatementsBlock{Statements: statements}
 		cases = append(cases, caseBlock)
 	}
 	stmt.Cases = cases
@@ -525,14 +525,14 @@ func (p *Parser) parseSwitchStatement() (Statement, error) {
 		if err != nil {
 			return nil, err
 		}
-		stmt.DefaultBranch = &StatementsBlock{Statements: statements}
+		stmt.DefaultBranch = &AstStatementsBlock{Statements: statements}
 	}
 
 	return stmt, nil
 }
 
-func (p *Parser) parseIfStatement() (Statement, error) {
-	stmt := &IfStatement{Token: p.currToken}
+func (p *Parser) parseIfStatement() (AstStatement, error) {
+	stmt := &AstIfStatement{Token: p.currToken}
 
 	var err error
 
@@ -558,7 +558,7 @@ func (p *Parser) parseIfStatement() (Statement, error) {
 		return nil, err
 	}
 
-	stmt.PositiveBranch = &StatementsBlock{Statements: statements}
+	stmt.PositiveBranch = &AstStatementsBlock{Statements: statements}
 
 	if err = p.read(); err != nil {
 		return nil, err
@@ -573,18 +573,18 @@ func (p *Parser) parseIfStatement() (Statement, error) {
 	}
 
 	statements, err = p.parseBlockOfStatements(TokenIDs(TokenRBrace))
-	stmt.ElseBranch = &StatementsBlock{Statements: statements}
+	stmt.ElseBranch = &AstStatementsBlock{Statements: statements}
 
 	return stmt, err
 }
 
-func (p *Parser) parseStructDefinition() (Statement, error) {
-	node := &StructDefinition{Token: p.currToken}
+func (p *Parser) parseStructDefinition() (AstStatement, error) {
+	node := &AstStructDefinition{Token: p.currToken}
 
 	if err := p.read(); err != nil {
 		return nil, err
 	}
-	name, err := p.getExpectedToken(TokenIdent)
+	name, err := p.expectedToken(TokenIdent)
 	if err != nil {
 		return nil, err
 	}
@@ -606,7 +606,7 @@ func (p *Parser) parseStructDefinition() (Statement, error) {
 		return nil, p.parseError("Struct should contain at least 1 field")
 	}
 
-	fieldsMap := make(map[string]*VarAndType)
+	fieldsMap := make(map[string]*AstVarAndType)
 	for _, field := range fields {
 		fieldsMap[field.Var.Value] = field
 	}
@@ -616,14 +616,14 @@ func (p *Parser) parseStructDefinition() (Statement, error) {
 	return node, nil
 }
 
-func (p *Parser) parseFunction(terminatedTokens []TokenID) (Expression, error) {
-	function := &Function{Token: p.currToken}
+func (p *Parser) parseFunction(terminatedTokens []TokenID) (AstExpression, error) {
+	function := &AstFunction{Token: p.currToken}
 
 	err := p.read()
 	if err != nil {
 		return nil, err
 	}
-	_, err = p.getExpectedToken(TokenLParen)
+	_, err = p.expectedToken(TokenLParen)
 	if err != nil {
 		return nil, err
 	}
@@ -637,7 +637,7 @@ func (p *Parser) parseFunction(terminatedTokens []TokenID) (Expression, error) {
 		return nil, err
 	}
 
-	_, err = p.getExpectedToken(TokenRParen)
+	_, err = p.expectedToken(TokenRParen)
 	if err != nil {
 		return nil, err
 	}
@@ -646,7 +646,7 @@ func (p *Parser) parseFunction(terminatedTokens []TokenID) (Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	typeToken, err := p.getExpectedTokens([]TokenID{TokenType, TokenIdent})
+	typeToken, err := p.expectedTokens([]TokenID{TokenType, TokenIdent})
 	if err != nil {
 		return nil, err
 	}
@@ -661,17 +661,17 @@ func (p *Parser) parseFunction(terminatedTokens []TokenID) (Expression, error) {
 		return nil, err
 	}
 	statements, err := p.parseBlockOfStatements(TokenIDs(TokenRBrace))
-	function.StatementsBlock = &StatementsBlock{Statements: statements}
+	function.StatementsBlock = &AstStatementsBlock{Statements: statements}
 
 	return function, err
 }
 
-func (p *Parser) parseVarAndTypes(endToken TokenID, delimiterToken TokenID) ([]*VarAndType, error) {
+func (p *Parser) parseVarAndTypes(endToken TokenID, delimiterToken TokenID) ([]*AstVarAndType, error) {
 	var err error
-	vars := make([]*VarAndType, 0)
+	vars := make([]*AstVarAndType, 0)
 
 	for p.currTokenIn([]TokenID{TokenLBracket, TokenType, TokenIdent}) {
-		argument := &VarAndType{Token: p.currToken}
+		argument := &AstVarAndType{Token: p.currToken}
 		arrayTypePrefix := ""
 		if p.currToken.Type == TokenLBracket {
 			if err := p.requireToken(TokenRBracket); err != nil {
@@ -700,7 +700,7 @@ func (p *Parser) parseVarAndTypes(endToken TokenID, delimiterToken TokenID) ([]*
 			if err != nil {
 				return nil, err
 			}
-			_, err := p.getExpectedToken(delimiterToken)
+			_, err := p.expectedToken(delimiterToken)
 			if err != nil {
 				return nil, err
 			}
@@ -713,8 +713,8 @@ func (p *Parser) parseVarAndTypes(endToken TokenID, delimiterToken TokenID) ([]*
 	return vars, nil
 }
 
-func (p *Parser) parseFunctionCall(function Expression, terminatedTokens []TokenID) (Expression, error) {
-	functionCall := &FunctionCall{
+func (p *Parser) parseFunctionCall(function AstExpression, terminatedTokens []TokenID) (AstExpression, error) {
+	functionCall := &AstFunctionCall{
 		Token:    p.currToken,
 		Function: function,
 	}
@@ -728,8 +728,8 @@ func (p *Parser) parseFunctionCall(function Expression, terminatedTokens []Token
 	return functionCall, err
 }
 
-func (p *Parser) parseExpressions(closeTokens []TokenID) ([]Expression, error) {
-	var expressions []Expression
+func (p *Parser) parseExpressions(closeTokens []TokenID) ([]AstExpression, error) {
+	var expressions []AstExpression
 
 	for !p.currTokenIn(closeTokens) {
 		expression, err := p.parseExpression(PriorityLowest, append(closeTokens, TokenComma))
@@ -751,7 +751,7 @@ func (p *Parser) parseExpressions(closeTokens []TokenID) ([]Expression, error) {
 	return expressions, nil
 }
 
-func (p *Parser) parseGroupedExpression(terminatedTokens []TokenID) (Expression, error) {
+func (p *Parser) parseGroupedExpression(terminatedTokens []TokenID) (AstExpression, error) {
 	err := p.read()
 	if err != nil {
 		return nil, err
@@ -764,7 +764,7 @@ func (p *Parser) parseGroupedExpression(terminatedTokens []TokenID) (Expression,
 	if err = p.read(); err != nil {
 		return nil, err
 	}
-	_, err = p.getExpectedToken(TokenRParen)
+	_, err = p.expectedToken(TokenRParen)
 	if err != nil {
 		return nil, err
 	}
@@ -772,15 +772,15 @@ func (p *Parser) parseGroupedExpression(terminatedTokens []TokenID) (Expression,
 	return expression, nil
 }
 
-func (p *Parser) parseBoolean(terminatedTokens []TokenID) (Expression, error) {
-	return &Boolean{
+func (p *Parser) parseBoolean(terminatedTokens []TokenID) (AstExpression, error) {
+	return &AstBoolean{
 		Token: p.currToken,
 		Value: p.currToken.Type == TokenTrue,
 	}, nil
 }
 
-func (p *Parser) parseArray(terminatedTokens []TokenID) (Expression, error) {
-	node := &Array{Token: p.currToken}
+func (p *Parser) parseArray(terminatedTokens []TokenID) (AstExpression, error) {
+	node := &AstArray{Token: p.currToken}
 
 	var err error
 	if err = p.requireToken(TokenRBracket); err != nil {
@@ -791,7 +791,7 @@ func (p *Parser) parseArray(terminatedTokens []TokenID) (Expression, error) {
 		return nil, err
 	}
 
-	arrayTypeToken, err := p.getExpectedTokens([]TokenID{TokenIdent, TokenType})
+	arrayTypeToken, err := p.expectedTokens([]TokenID{TokenIdent, TokenType})
 	if err != nil {
 		return nil, err
 	}
@@ -802,7 +802,7 @@ func (p *Parser) parseArray(terminatedTokens []TokenID) (Expression, error) {
 		return nil, err
 	}
 
-	var elementExpressions []Expression
+	var elementExpressions []AstExpression
 	if p.currToken.Type == TokenLBrace {
 		if err = p.read(); err != nil {
 			return nil, err
@@ -818,8 +818,8 @@ func (p *Parser) parseArray(terminatedTokens []TokenID) (Expression, error) {
 	return node, nil
 }
 
-func (p *Parser) parseArrayIndexCall(array Expression, terminatedTokens []TokenID) (Expression, error) {
-	node := &ArrayIndexCall{
+func (p *Parser) parseArrayIndexCall(array AstExpression, terminatedTokens []TokenID) (AstExpression, error) {
+	node := &AstArrayIndexCall{
 		Token: p.currToken,
 		Left:  array,
 	}
@@ -843,14 +843,14 @@ func (p *Parser) parseArrayIndexCall(array Expression, terminatedTokens []TokenI
 }
 
 func (p *Parser) parseStructExpression(
-	expr Expression,
+	expr AstExpression,
 	terminatedTokens []TokenID,
-) (Expression, error) {
-	ident, ok := expr.(*Identifier)
+) (AstExpression, error) {
+	ident, ok := expr.(*AstIdentifier)
 	if !ok {
 		return nil, p.parseError("Struct operator should only on identifiers, but '%T'", expr)
 	}
-	node := &Struct{
+	node := &AstStruct{
 		Token: p.currToken,
 		Ident: ident,
 	}
@@ -858,7 +858,7 @@ func (p *Parser) parseStructExpression(
 		return nil, err
 	}
 
-	fields := make([]*Assignment, 0)
+	fields := make([]*AstAssignment, 0)
 	for p.currToken.Type == TokenIdent {
 		field, err := p.parseAssignment([]TokenID{TokenComma, TokenRBrace})
 		if err != nil {
@@ -876,8 +876,8 @@ func (p *Parser) parseStructExpression(
 	return node, nil
 }
 
-func (p *Parser) parseStructFieldCall(expr Expression, terminatedTokens []TokenID) (Expression, error) {
-	node := &StructFieldCall{
+func (p *Parser) parseStructFieldCall(expr AstExpression, terminatedTokens []TokenID) (AstExpression, error) {
+	node := &AstStructFieldCall{
 		Token:      p.currToken,
 		StructExpr: expr,
 	}
@@ -894,13 +894,13 @@ func (p *Parser) parseStructFieldCall(expr Expression, terminatedTokens []TokenI
 	return node, nil
 }
 
-func (p *Parser) parseEnumDefinition() (Statement, error) {
-	node := &EnumDefinition{Token: p.currToken}
+func (p *Parser) parseEnumDefinition() (AstStatement, error) {
+	node := &AstEnumDefinition{Token: p.currToken}
 
 	if err := p.read(); err != nil {
 		return nil, err
 	}
-	name, err := p.getExpectedToken(TokenIdent)
+	name, err := p.expectedToken(TokenIdent)
 	if err != nil {
 		return nil, err
 	}
@@ -916,7 +916,7 @@ func (p *Parser) parseEnumDefinition() (Statement, error) {
 
 	node.Elements = make([]string, 0)
 	for p.currToken.Type != TokenRBrace {
-		el, err := p.getExpectedToken(TokenIdent)
+		el, err := p.expectedToken(TokenIdent)
 		if err != nil {
 			return nil, err
 		}
@@ -939,8 +939,8 @@ func (p *Parser) parseEnumDefinition() (Statement, error) {
 	return node, nil
 }
 
-func (p *Parser) parseEnumExpression(expr Expression, terminatedTokens []TokenID) (Expression, error) {
-	node := &EnumElementCall{
+func (p *Parser) parseEnumExpression(expr AstExpression, terminatedTokens []TokenID) (AstExpression, error) {
+	node := &AstEnumElementCall{
 		Token:    p.currToken,
 		EnumExpr: expr,
 	}
@@ -972,25 +972,25 @@ func (p *Parser) curPrecedence() int {
 	return PriorityLowest
 }
 
-func (p *Parser) getExpectedToken(TokenID TokenID) (Token, error) {
+func (p *Parser) expectedToken(TokenID TokenID) (Token, error) {
 	if p.currToken.Type != TokenID {
-		err := p.parseError("expected token to be '%s', got '%s' instead",
+		err := p.parseError("expected '%s', got '%s' instead",
 			TokenID, p.currToken.Type)
 		return Token{}, err
 	}
 	return p.currToken, nil
 }
 
-func (p *Parser) getExpectedTokens(tokenTypes []TokenID) (Token, error) {
+func (p *Parser) expectedTokens(tokenTypes []TokenID) (Token, error) {
 	if len(tokenTypes) == 1 {
-		return p.getExpectedToken(tokenTypes[0])
+		return p.expectedToken(tokenTypes[0])
 	}
 	for _, tok := range tokenTypes {
 		if p.currToken.Type == tok {
 			return p.currToken, nil
 		}
 	}
-	err := p.parseError("expected token to be one of (%s), got '%s' instead",
+	err := p.parseError("expected one of (%s), got '%s' instead",
 		TokensString(tokenTypes), p.currToken.Type)
 	return Token{}, err
 }
@@ -1017,7 +1017,7 @@ func (p *Parser) requireToken(tok TokenID) error {
 	if err := p.read(); err != nil {
 		return err
 	}
-	if _, err := p.getExpectedToken(tok); err != nil {
+	if _, err := p.expectedToken(tok); err != nil {
 		return err
 	}
 	return nil

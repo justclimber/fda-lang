@@ -39,7 +39,7 @@ type ObjEnumDefinition struct {
 	Elements []string
 }
 
-func CreateVarDefinitionsFromVarType(varTypes map[string]*VarAndType) map[string]string {
+func CreateVarDefinitionsFromVarType(varTypes map[string]*AstVarAndType) map[string]string {
 	varDefinitions := make(map[string]string)
 	for k, v := range varTypes {
 		varDefinitions[k] = v.VarType
@@ -110,8 +110,8 @@ func (rv *ObjReturnValue) Type() ObjectType { return TypeReturnValue }
 func (rv *ObjReturnValue) Inspect() string  { return rv.Value.Inspect() }
 
 type ObjFunction struct {
-	Arguments  []*VarAndType
-	Statements *StatementsBlock
+	Arguments  []*AstVarAndType
+	Statements *AstStatementsBlock
 	ReturnType string
 	Env        *Environment
 }

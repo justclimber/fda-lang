@@ -21,10 +21,10 @@ b = 3
 	require.Len(t, astProgram.Statements, 2)
 	vars := []string{"a", "b"}
 	for i, stmt := range astProgram.Statements {
-		assert.IsType(t, &StatementWithVoidedExpression{}, stmt, "%d statement", i)
-		assignStmt, _ := stmt.(*StatementWithVoidedExpression)
-		assert.IsType(t, &Assignment{}, assignStmt.Expr, "%d statement", i)
-		assignExpr, _ := assignStmt.Expr.(*Assignment)
+		assert.IsType(t, &AstStatementWithVoidedExpression{}, stmt, "%d statement", i)
+		assignStmt, _ := stmt.(*AstStatementWithVoidedExpression)
+		assert.IsType(t, &AstAssignment{}, assignStmt.Expr, "%d statement", i)
+		assignExpr, _ := assignStmt.Expr.(*AstAssignment)
 		assert.Equal(t, assignExpr.Left.Value, vars[i], "%d statement", i)
 	}
 }
@@ -43,13 +43,13 @@ b = -a
 	require.Len(t, astProgram.Statements, 2)
 	vars := []string{"a", "b"}
 	for i, stmt := range astProgram.Statements {
-		assert.IsType(t, &StatementWithVoidedExpression{}, stmt, "%d statement", i)
+		assert.IsType(t, &AstStatementWithVoidedExpression{}, stmt, "%d statement", i)
 
-		assignStmt, _ := stmt.(*StatementWithVoidedExpression)
-		assignExpr, _ := assignStmt.Expr.(*Assignment)
+		assignStmt, _ := stmt.(*AstStatementWithVoidedExpression)
+		assignExpr, _ := assignStmt.Expr.(*AstAssignment)
 		assert.Equal(t, assignExpr.Left.Value, vars[i], "%d statement", i)
 
-		assert.IsType(t, &UnaryExpression{}, assignExpr.Value, "%d statement", i)
+		assert.IsType(t, &AstUnary{}, assignExpr.Value, "%d statement", i)
 	}
 }
 
@@ -64,11 +64,11 @@ func TestParseReal(t *testing.T) {
 	require.Nil(t, err)
 
 	require.Len(t, astProgram.Statements, 1)
-	assert.IsType(t, &StatementWithVoidedExpression{}, astProgram.Statements[0])
-	assignStmt, _ := astProgram.Statements[0].(*StatementWithVoidedExpression)
-	assert.IsType(t, &Assignment{}, assignStmt.Expr)
-	assignExpr, _ := assignStmt.Expr.(*Assignment)
-	assert.IsType(t, &NumFloat{}, assignExpr.Value)
+	assert.IsType(t, &AstStatementWithVoidedExpression{}, astProgram.Statements[0])
+	assignStmt, _ := astProgram.Statements[0].(*AstStatementWithVoidedExpression)
+	assert.IsType(t, &AstAssignment{}, assignStmt.Expr)
+	assignExpr, _ := assignStmt.Expr.(*AstAssignment)
+	assert.IsType(t, &AstNumFloat{}, assignExpr.Value)
 }
 
 func TestParseFunctionAndFunctionCall(t *testing.T) {
@@ -85,24 +85,24 @@ c = a()
 	require.Nil(t, err)
 
 	require.Len(t, astProgram.Statements, 2)
-	assert.IsType(t, &StatementWithVoidedExpression{}, astProgram.Statements[0])
-	assignStmt, _ := astProgram.Statements[0].(*StatementWithVoidedExpression)
-	assert.IsType(t, &Assignment{}, assignStmt.Expr)
-	assignExpr, _ := assignStmt.Expr.(*Assignment)
-	assert.IsType(t, &Function{}, assignExpr.Value)
+	assert.IsType(t, &AstStatementWithVoidedExpression{}, astProgram.Statements[0])
+	assignStmt, _ := astProgram.Statements[0].(*AstStatementWithVoidedExpression)
+	assert.IsType(t, &AstAssignment{}, assignStmt.Expr)
+	assignExpr, _ := assignStmt.Expr.(*AstAssignment)
+	assert.IsType(t, &AstFunction{}, assignExpr.Value)
 
-	function, _ := assignExpr.Value.(*Function)
+	function, _ := assignExpr.Value.(*AstFunction)
 	require.Len(t, function.StatementsBlock.Statements, 1)
-	assert.IsType(t, &ReturnStatement{}, function.StatementsBlock.Statements[0])
+	assert.IsType(t, &AstReturn{}, function.StatementsBlock.Statements[0])
 
-	returnStmt, _ := function.StatementsBlock.Statements[0].(*ReturnStatement)
-	assert.IsType(t, &NumInt{}, returnStmt.ReturnValue)
+	returnStmt, _ := function.StatementsBlock.Statements[0].(*AstReturn)
+	assert.IsType(t, &AstNumInt{}, returnStmt.ReturnValue)
 
-	assert.IsType(t, &StatementWithVoidedExpression{}, astProgram.Statements[1])
-	assignStmt2, _ := astProgram.Statements[1].(*StatementWithVoidedExpression)
-	assert.IsType(t, &Assignment{}, assignStmt2.Expr)
-	assignExpr2, _ := assignStmt2.Expr.(*Assignment)
-	assert.IsType(t, &FunctionCall{}, assignExpr2.Value)
+	assert.IsType(t, &AstStatementWithVoidedExpression{}, astProgram.Statements[1])
+	assignStmt2, _ := astProgram.Statements[1].(*AstStatementWithVoidedExpression)
+	assert.IsType(t, &AstAssignment{}, assignStmt2.Expr)
+	assignExpr2, _ := assignStmt2.Expr.(*AstAssignment)
+	assert.IsType(t, &AstFunctionCall{}, assignExpr2.Value)
 }
 
 func TestParseFunctionAndFunctionCallWithArgs(t *testing.T) {
@@ -119,33 +119,33 @@ c = a(2, 5)
 	require.Nil(t, err)
 
 	require.Len(t, astProgram.Statements, 2)
-	assert.IsType(t, &StatementWithVoidedExpression{}, astProgram.Statements[0])
-	assignStmt, _ := astProgram.Statements[0].(*StatementWithVoidedExpression)
-	assert.IsType(t, &Assignment{}, assignStmt.Expr)
-	assignExpr, _ := assignStmt.Expr.(*Assignment)
-	assert.IsType(t, &Function{}, assignExpr.Value)
+	assert.IsType(t, &AstStatementWithVoidedExpression{}, astProgram.Statements[0])
+	assignStmt, _ := astProgram.Statements[0].(*AstStatementWithVoidedExpression)
+	assert.IsType(t, &AstAssignment{}, assignStmt.Expr)
+	assignExpr, _ := assignStmt.Expr.(*AstAssignment)
+	assert.IsType(t, &AstFunction{}, assignExpr.Value)
 
-	function, _ := assignExpr.Value.(*Function)
+	function, _ := assignExpr.Value.(*AstFunction)
 	require.Len(t, function.StatementsBlock.Statements, 1)
-	assert.IsType(t, &ReturnStatement{}, function.StatementsBlock.Statements[0])
+	assert.IsType(t, &AstReturn{}, function.StatementsBlock.Statements[0])
 	assert.Len(t, function.Arguments, 2)
 	assert.Equal(t, "int", function.Arguments[0].VarType)
 	assert.Equal(t, "int", function.Arguments[1].VarType)
 	assert.Equal(t, "x", function.Arguments[0].Var.Value)
 	assert.Equal(t, "y", function.Arguments[1].Var.Value)
 
-	returnStmt, _ := function.StatementsBlock.Statements[0].(*ReturnStatement)
-	assert.IsType(t, &BinExpression{}, returnStmt.ReturnValue)
+	returnStmt, _ := function.StatementsBlock.Statements[0].(*AstReturn)
+	assert.IsType(t, &AstBinOperation{}, returnStmt.ReturnValue)
 
-	binExpression, _ := returnStmt.ReturnValue.(*BinExpression)
-	assert.IsType(t, &Identifier{}, binExpression.Left)
-	assert.IsType(t, &Identifier{}, binExpression.Right)
+	binExpression, _ := returnStmt.ReturnValue.(*AstBinOperation)
+	assert.IsType(t, &AstIdentifier{}, binExpression.Left)
+	assert.IsType(t, &AstIdentifier{}, binExpression.Right)
 
-	assert.IsType(t, &StatementWithVoidedExpression{}, astProgram.Statements[1])
-	assignStmt2, _ := astProgram.Statements[1].(*StatementWithVoidedExpression)
-	assert.IsType(t, &Assignment{}, assignStmt2.Expr)
-	assignExpr2, _ := assignStmt2.Expr.(*Assignment)
-	assert.IsType(t, &FunctionCall{}, assignExpr2.Value)
+	assert.IsType(t, &AstStatementWithVoidedExpression{}, astProgram.Statements[1])
+	assignStmt2, _ := astProgram.Statements[1].(*AstStatementWithVoidedExpression)
+	assert.IsType(t, &AstAssignment{}, assignStmt2.Expr)
+	assignExpr2, _ := assignStmt2.Expr.(*AstAssignment)
+	assert.IsType(t, &AstFunctionCall{}, assignExpr2.Value)
 }
 
 func TestParseIfStatement(t *testing.T) {
@@ -162,9 +162,9 @@ b = 2
 	require.Nil(t, err)
 
 	require.Len(t, astProgram.Statements, 2)
-	assert.IsType(t, &IfStatement{}, astProgram.Statements[0])
+	assert.IsType(t, &AstIfStatement{}, astProgram.Statements[0])
 
-	ifStatement, _ := astProgram.Statements[0].(*IfStatement)
+	ifStatement, _ := astProgram.Statements[0].(*AstIfStatement)
 	assert.NotNil(t, ifStatement.Condition)
 }
 
@@ -184,7 +184,7 @@ b = 2
 	require.Nil(t, err)
 
 	require.Len(t, astProgram.Statements, 2)
-	assert.IsType(t, &IfStatement{}, astProgram.Statements[0])
+	assert.IsType(t, &AstIfStatement{}, astProgram.Statements[0])
 }
 
 func TestArrayAsInvalidStatementNegative(t *testing.T) {

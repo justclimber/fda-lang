@@ -10,7 +10,7 @@ var (
 	ReservedObjFalse = &ObjBoolean{Value: false}
 )
 
-func registerStructDefinition(node *StructDefinition, env *Environment) error {
+func registerStructDefinition(node *AstStructDefinition, env *Environment) error {
 	s := &ObjStructDefinition{
 		Name:   node.Name,
 		Fields: CreateVarDefinitionsFromVarType(node.Fields),
@@ -21,7 +21,7 @@ func registerStructDefinition(node *StructDefinition, env *Environment) error {
 	return nil
 }
 
-func registerEnumDefinition(node *EnumDefinition, env *Environment) error {
+func registerEnumDefinition(node *AstEnumDefinition, env *Environment) error {
 	ed := &ObjEnumDefinition{
 		Name:     node.Name,
 		Elements: node.Elements,
@@ -32,7 +32,7 @@ func registerEnumDefinition(node *EnumDefinition, env *Environment) error {
 	return nil
 }
 
-func structTypeAndVarsChecks(n *Assignment, definition *ObjStructDefinition, result Object) error {
+func structTypeAndVarsChecks(n *AstAssignment, definition *ObjStructDefinition, result Object) error {
 	fieldType, ok := definition.Fields[n.Left.Value]
 	if !ok {
 		return runtimeError(
@@ -49,7 +49,7 @@ func structTypeAndVarsChecks(n *Assignment, definition *ObjStructDefinition, res
 	return nil
 }
 
-func arrayElementsTypeCheck(node *Array, t string, es []Object) error {
+func arrayElementsTypeCheck(node *AstArray, t string, es []Object) error {
 	for i, el := range es {
 		if string(el.Type()) != t {
 			return runtimeError(node, "Array element #%d should be type '%s' but '%s' given", i+1, t, el.Type())
@@ -58,16 +58,16 @@ func arrayElementsTypeCheck(node *Array, t string, es []Object) error {
 	return nil
 }
 
-func functionReturnTypeCheck(node *FunctionCall, result Object, functionReturnType string) error {
+func functionReturnTypeCheck(node *AstFunctionCall, result Object, functionReturnType string) error {
 	if result.Type() != ObjectType(functionReturnType) {
 		return runtimeError(node,
-			"ReturnStatement type mismatch: function declared as '%s' but in fact return '%s'",
+			"Return type mismatch: function declared as '%s' but in fact return '%s'",
 			functionReturnType, result.Type())
 	}
 	return nil
 }
 
-func functionCallArgumentsCheck(node *FunctionCall, declaredArgs []*VarAndType, actualArgValues []Object) error {
+func functionCallArgumentsCheck(node *AstFunctionCall, declaredArgs []*AstVarAndType, actualArgValues []Object) error {
 	if len(declaredArgs) != len(actualArgValues) {
 		return runtimeError(node, "Function call arguments count mismatch: declared %d, but called %d",
 			len(declaredArgs), len(actualArgValues))
@@ -95,7 +95,7 @@ func transferArgsToNewEnv(fn *ObjFunction, args []Object) *Environment {
 	return env
 }
 
-func runtimeError(node Node, format string, args ...interface{}) error {
+func runtimeError(node AstNode, format string, args ...interface{}) error {
 	msg := fmt.Sprintf(format, args...)
 	t := node.GetToken()
 	return errors.New(fmt.Sprintf("%s\nline:%d, pos %d", msg, t.Line, t.Col))

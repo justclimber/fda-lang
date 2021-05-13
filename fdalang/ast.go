@@ -1,232 +1,233 @@
 package fdalang
 
-type Node interface {
+type AstNode interface {
 	GetToken() Token
 }
 
-type Expression interface {
-	Node
+type AstExpression interface {
+	AstNode
 	Expression()
 }
 
-type Statement interface {
-	Node
+type AstStatement interface {
+	AstNode
 	Statement()
 }
 
-type StatementsBlock struct {
-	Statements []Statement
+type AstStatementsBlock struct {
+	Statements []AstStatement
 }
 
-type Assignment struct {
+type AstAssignment struct {
 	Token Token
-	Left  *Identifier
-	Value Expression
+	Left  *AstIdentifier
+	Value AstExpression
 }
 
-func (node *Assignment) Expression() {}
+func (node *AstAssignment) Expression() {}
 
-type StatementWithVoidedExpression struct {
+type AstStatementWithVoidedExpression struct {
 	Token Token
-	Expr  Expression
+	Expr  AstExpression
 }
 
-func (node *StatementWithVoidedExpression) Statement() {}
+func (node *AstStatementWithVoidedExpression) Statement() {}
 
-type StructFieldAssignment struct {
+type AstStructFieldAssignment struct {
 	Token Token
-	Left  *StructFieldCall
-	Value Expression
+	Left  *AstStructFieldCall
+	Value AstExpression
 }
 
-func (node *StructFieldAssignment) Expression() {}
+func (node *AstStructFieldAssignment) Expression() {}
 
-type UnaryExpression struct {
+type AstUnary struct {
 	Token    Token
-	Right    Expression
+	Right    AstExpression
 	Operator string
 }
-func (node *UnaryExpression) Expression() {}
 
-type EmptierExpression struct {
+func (node *AstUnary) Expression() {}
+
+type AstEmptier struct {
 	Token   Token
 	Type    string
 	IsArray bool
 }
 
-func (node *EmptierExpression) Expression() {}
+func (node *AstEmptier) Expression() {}
 
-type BinExpression struct {
+type AstBinOperation struct {
 	Token    Token
-	Left     Expression
-	Right    Expression
+	Left     AstExpression
+	Right    AstExpression
 	Operator string
 }
 
-func (node *BinExpression) Expression() {}
+func (node *AstBinOperation) Expression() {}
 
-type Identifier struct {
+type AstIdentifier struct {
 	Token Token
 	Value string
 }
 
-func (node *Identifier) Expression() {}
+func (node *AstIdentifier) Expression() {}
 
-type NumInt struct {
+type AstNumInt struct {
 	Token Token
 	Value int64
 }
 
-func (node *NumInt) Expression() {}
+func (node *AstNumInt) Expression() {}
 
-type NumFloat struct {
+type AstNumFloat struct {
 	Token Token
 	Value float64
 }
 
-func (node *NumFloat) Expression() {}
+func (node *AstNumFloat) Expression() {}
 
-type Boolean struct {
+type AstBoolean struct {
 	Token Token
 	Value bool
 }
 
-func (node *Boolean) Expression() {}
+func (node *AstBoolean) Expression() {}
 
-type Array struct {
+type AstArray struct {
 	Token        Token
 	ElementsType string
-	Elements     []Expression
+	Elements     []AstExpression
 }
 
-func (node *Array) Expression() {}
+func (node *AstArray) Expression() {}
 
-type ArrayIndexCall struct {
+type AstArrayIndexCall struct {
 	Token Token
-	Left  Expression
-	Index Expression
+	Left  AstExpression
+	Index AstExpression
 }
 
-func (node *ArrayIndexCall) Expression() {}
+func (node *AstArrayIndexCall) Expression() {}
 
-type ReturnStatement struct {
+type AstReturn struct {
 	Token       Token
-	ReturnValue Expression
+	ReturnValue AstExpression
 }
 
-func (node *ReturnStatement) Statement() {}
+func (node *AstReturn) Statement() {}
 
-type Function struct {
+type AstFunction struct {
 	Token           Token
-	Arguments       []*VarAndType
+	Arguments       []*AstVarAndType
 	ReturnType      string
-	StatementsBlock *StatementsBlock
+	StatementsBlock *AstStatementsBlock
 }
 
-func (node *Function) Expression() {}
+func (node *AstFunction) Expression() {}
 
-type VarAndType struct {
+type AstVarAndType struct {
 	Token   Token
 	VarType string
-	Var     *Identifier
+	Var     *AstIdentifier
 }
 
-type FunctionCall struct {
+type AstFunctionCall struct {
 	Token     Token
-	Function  Expression
-	Arguments []Expression
+	Function  AstExpression
+	Arguments []AstExpression
 }
 
-func (node *FunctionCall) Expression() {}
+func (node *AstFunctionCall) Expression() {}
 
-type IfStatement struct {
+type AstIfStatement struct {
 	Token          Token
-	Condition      Expression
-	PositiveBranch *StatementsBlock
-	ElseBranch     *StatementsBlock
+	Condition      AstExpression
+	PositiveBranch *AstStatementsBlock
+	ElseBranch     *AstStatementsBlock
 }
 
-func (node *IfStatement) Statement() {}
+func (node *AstIfStatement) Statement() {}
 
-type EnumDefinition struct {
+type AstEnumDefinition struct {
 	Token    Token
 	Name     string
 	Elements []string
 }
 
-func (node *EnumDefinition) Statement() {}
+func (node *AstEnumDefinition) Statement() {}
 
-type EnumElementCall struct {
+type AstEnumElementCall struct {
 	Token    Token
-	EnumExpr Expression
-	Element  *Identifier
+	EnumExpr AstExpression
+	Element  *AstIdentifier
 }
 
-func (node *EnumElementCall) Expression() {}
+func (node *AstEnumElementCall) Expression() {}
 
-type StructDefinition struct {
+type AstStructDefinition struct {
 	Token  Token
 	Name   string
-	Fields map[string]*VarAndType
+	Fields map[string]*AstVarAndType
 }
 
-func (node *StructDefinition) Statement() {}
+func (node *AstStructDefinition) Statement() {}
 
-type Struct struct {
+type AstStruct struct {
 	Token  Token
-	Ident  *Identifier
-	Fields []*Assignment
+	Ident  *AstIdentifier
+	Fields []*AstAssignment
 }
 
-func (node *Struct) Expression() {}
+func (node *AstStruct) Expression() {}
 
-type StructFieldCall struct {
+type AstStructFieldCall struct {
 	Token      Token
-	StructExpr Expression
-	Field      *Identifier
+	StructExpr AstExpression
+	Field      *AstIdentifier
 }
 
-func (node *StructFieldCall) Expression() {}
+func (node *AstStructFieldCall) Expression() {}
 
-type Case struct {
+type AstCase struct {
 	Token          Token
-	Condition      Expression
-	PositiveBranch *StatementsBlock
+	Condition      AstExpression
+	PositiveBranch *AstStatementsBlock
 }
 
-type Switch struct {
+type AstSwitch struct {
 	Token            Token
-	Cases            []*Case
-	SwitchExpression Expression
-	DefaultBranch    *StatementsBlock
+	Cases            []*AstCase
+	SwitchExpression AstExpression
+	DefaultBranch    *AstStatementsBlock
 }
 
-func (node *Switch) Statement() {}
+func (node *AstSwitch) Statement() {}
 
-func (node *Assignment) GetToken() Token                    { return node.Token }
-func (node *StructFieldAssignment) GetToken() Token         { return node.Token }
-func (node *UnaryExpression) GetToken() Token               { return node.Token }
-func (node *BinExpression) GetToken() Token                 { return node.Token }
-func (node *Identifier) GetToken() Token                    { return node.Token }
-func (node *NumInt) GetToken() Token                        { return node.Token }
-func (node *NumFloat) GetToken() Token                      { return node.Token }
-func (node *Array) GetToken() Token                         { return node.Token }
-func (node *ArrayIndexCall) GetToken() Token                { return node.Token }
-func (node *Boolean) GetToken() Token                       { return node.Token }
-func (node *ReturnStatement) GetToken() Token               { return node.Token }
-func (node *StatementWithVoidedExpression) GetToken() Token { return node.Token }
-func (node *Function) GetToken() Token                      { return node.Token }
-func (node *VarAndType) GetToken() Token                    { return node.Token }
-func (node *FunctionCall) GetToken() Token                  { return node.Token }
-func (node *IfStatement) GetToken() Token                   { return node.Token }
-func (node *StructDefinition) GetToken() Token              { return node.Token }
-func (node *Struct) GetToken() Token                        { return node.Token }
-func (node *StructFieldCall) GetToken() Token               { return node.Token }
-func (node *EnumDefinition) GetToken() Token                { return node.Token }
-func (node *EnumElementCall) GetToken() Token               { return node.Token }
-func (node *Switch) GetToken() Token                        { return node.Token }
-func (node *EmptierExpression) GetToken() Token             { return node.Token }
-func (node *StatementsBlock) GetToken() Token {
+func (node *AstAssignment) GetToken() Token                    { return node.Token }
+func (node *AstStructFieldAssignment) GetToken() Token         { return node.Token }
+func (node *AstUnary) GetToken() Token                         { return node.Token }
+func (node *AstBinOperation) GetToken() Token                  { return node.Token }
+func (node *AstIdentifier) GetToken() Token                    { return node.Token }
+func (node *AstNumInt) GetToken() Token                        { return node.Token }
+func (node *AstNumFloat) GetToken() Token                      { return node.Token }
+func (node *AstArray) GetToken() Token                         { return node.Token }
+func (node *AstArrayIndexCall) GetToken() Token                { return node.Token }
+func (node *AstBoolean) GetToken() Token                       { return node.Token }
+func (node *AstReturn) GetToken() Token                        { return node.Token }
+func (node *AstStatementWithVoidedExpression) GetToken() Token { return node.Token }
+func (node *AstFunction) GetToken() Token                      { return node.Token }
+func (node *AstVarAndType) GetToken() Token                    { return node.Token }
+func (node *AstFunctionCall) GetToken() Token                  { return node.Token }
+func (node *AstIfStatement) GetToken() Token                   { return node.Token }
+func (node *AstStructDefinition) GetToken() Token              { return node.Token }
+func (node *AstStruct) GetToken() Token                        { return node.Token }
+func (node *AstStructFieldCall) GetToken() Token               { return node.Token }
+func (node *AstEnumDefinition) GetToken() Token                { return node.Token }
+func (node *AstEnumElementCall) GetToken() Token               { return node.Token }
+func (node *AstSwitch) GetToken() Token                        { return node.Token }
+func (node *AstEmptier) GetToken() Token                       { return node.Token }
+func (node *AstStatementsBlock) GetToken() Token {
 	if len(node.Statements) > 0 {
 		return node.Statements[0].GetToken()
 	}
