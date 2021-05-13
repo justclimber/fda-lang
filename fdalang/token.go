@@ -94,7 +94,7 @@ func LookupIdent(ident string) TokenID {
 	return TokenIdent
 }
 
-func GetTokenTypes(tokens TokenID) []TokenID {
+func TokenIDs(tokens TokenID) []TokenID {
 	return []TokenID{tokens}
 }
 

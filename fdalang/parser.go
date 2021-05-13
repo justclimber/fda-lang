@@ -137,7 +137,7 @@ func (p *Parser) back() {
 func (p *Parser) Parse() (*StatementsBlock, error) {
 	program := &StatementsBlock{}
 
-	statements, err := p.parseBlockOfStatements(GetTokenTypes(TokenEOF))
+	statements, err := p.parseBlockOfStatements(TokenIDs(TokenEOF))
 	program.Statements = statements
 
 	return program, err
@@ -173,11 +173,11 @@ func (p *Parser) parseStatement() (IStatement, error) {
 			if err != nil {
 				return nil, err
 			}
-			return p.parseFunctionCall(function, GetTokenTypes(TokenEOL))
+			return p.parseFunctionCall(function, TokenIDs(TokenEOL))
 		} else if p.nextToken.Type == TokenDot {
-			return p.parseStructFieldAssignment(GetTokenTypes(TokenEOL))
+			return p.parseStructFieldAssignment(TokenIDs(TokenEOL))
 		} else {
-			return p.parseAssignment(GetTokenTypes(TokenEOL))
+			return p.parseAssignment(TokenIDs(TokenEOL))
 		}
 	case TokenReturn:
 		return p.parseReturn()
@@ -290,7 +290,7 @@ func (p *Parser) parseReturn() (*Return, error) {
 		return nil, err
 	}
 
-	stmt.ReturnValue, err = p.parseExpression(PriorityLowest, GetTokenTypes(TokenEOL))
+	stmt.ReturnValue, err = p.parseExpression(PriorityLowest, TokenIDs(TokenEOL))
 
 	if err != nil {
 		return nil, err
@@ -456,7 +456,7 @@ func (p *Parser) parseSwitchStatement() (IExpression, error) {
 			return nil, err
 		}
 
-		expr, err := p.parseExpression(PriorityLowest, GetTokenTypes(TokenLBrace))
+		expr, err := p.parseExpression(PriorityLowest, TokenIDs(TokenLBrace))
 		if err != nil {
 			return nil, err
 		}
@@ -479,13 +479,13 @@ func (p *Parser) parseSwitchStatement() (IExpression, error) {
 			caseBlock.Condition, err = p.parseRightPartOfExpression(
 				stmt.SwitchExpression,
 				PriorityLowest,
-				GetTokenTypes(TokenEOL),
+				TokenIDs(TokenEOL),
 			)
 		} else {
 			if err = p.read(); err != nil {
 				return nil, err
 			}
-			caseBlock.Condition, err = p.parseExpression(PriorityLowest, GetTokenTypes(TokenEOL))
+			caseBlock.Condition, err = p.parseExpression(PriorityLowest, TokenIDs(TokenEOL))
 		}
 		if err != nil {
 			return nil, err
@@ -508,7 +508,7 @@ func (p *Parser) parseSwitchStatement() (IExpression, error) {
 		if err = p.requireToken(TokenEOL); err != nil {
 			return nil, err
 		}
-		statements, err := p.parseBlockOfStatements(GetTokenTypes(TokenRBrace))
+		statements, err := p.parseBlockOfStatements(TokenIDs(TokenRBrace))
 		if err != nil {
 			return nil, err
 		}
@@ -527,7 +527,7 @@ func (p *Parser) parseIfStatement() (IExpression, error) {
 		return nil, err
 	}
 
-	stmt.Condition, err = p.parseExpression(PriorityLowest, GetTokenTypes(TokenLBrace))
+	stmt.Condition, err = p.parseExpression(PriorityLowest, TokenIDs(TokenLBrace))
 	if err != nil {
 		return nil, err
 	}
@@ -540,7 +540,7 @@ func (p *Parser) parseIfStatement() (IExpression, error) {
 		return nil, err
 	}
 
-	statements, err := p.parseBlockOfStatements(GetTokenTypes(TokenRBrace))
+	statements, err := p.parseBlockOfStatements(TokenIDs(TokenRBrace))
 	if err != nil {
 		return nil, err
 	}
@@ -559,7 +559,7 @@ func (p *Parser) parseIfStatement() (IExpression, error) {
 		return nil, err
 	}
 
-	statements, err = p.parseBlockOfStatements(GetTokenTypes(TokenRBrace))
+	statements, err = p.parseBlockOfStatements(TokenIDs(TokenRBrace))
 	stmt.ElseBranch = &StatementsBlock{Statements: statements}
 
 	return stmt, err
@@ -647,7 +647,7 @@ func (p *Parser) parseFunction(terminatedTokens []TokenID) (IExpression, error) 
 	if err != nil {
 		return nil, err
 	}
-	statements, err := p.parseBlockOfStatements(GetTokenTypes(TokenRBrace))
+	statements, err := p.parseBlockOfStatements(TokenIDs(TokenRBrace))
 	function.StatementsBlock = &StatementsBlock{Statements: statements}
 
 	return function, err
@@ -675,7 +675,7 @@ func (p *Parser) parseVarAndTypes(endToken TokenID, delimiterToken TokenID) ([]*
 			return nil, err
 		}
 
-		argument.Var, err = p.parseIdentifier(GetTokenTypes(delimiterToken))
+		argument.Var, err = p.parseIdentifier(TokenIDs(delimiterToken))
 		if err != nil {
 			return nil, err
 		}
@@ -710,7 +710,7 @@ func (p *Parser) parseFunctionCall(function IExpression, terminatedTokens []Toke
 		return nil, err
 	}
 
-	functionCall.Arguments, err = p.parseExpressions(GetTokenTypes(TokenRParen))
+	functionCall.Arguments, err = p.parseExpressions(TokenIDs(TokenRParen))
 
 	return functionCall, err
 }
@@ -744,7 +744,7 @@ func (p *Parser) parseGroupedExpression(terminatedTokens []TokenID) (IExpression
 		return nil, err
 	}
 
-	expression, err := p.parseExpression(PriorityLowest, GetTokenTypes(TokenRParen))
+	expression, err := p.parseExpression(PriorityLowest, TokenIDs(TokenRParen))
 	if err != nil {
 		return nil, err
 	}
