@@ -1,0 +1,41 @@
+sum = fn(int x, int y) int {
+   return x + y
+}
+a = sum(2, 5)
+c = 10
+if c > 8 {
+    print(true)
+} else {
+    print(false)
+}
+struct point {
+   float x
+   float y
+}
+// comments here
+struct mech {
+   point p
+}
+m = mech{p = point{x = 1., y = 2.}}
+
+px = m.p.x
+
+a = 10
+
+switch {
+case a < 20
+   r1 = 1
+case a == 0
+   r1 = 3
+default // this is also comment
+   r1 = 5
+}
+
+switch a {
+case < 20
+   r2 = 1
+case == 0
+   r2 = 3
+default
+   r1 = 5
+}
