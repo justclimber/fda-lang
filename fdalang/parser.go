@@ -8,36 +8,36 @@ import (
 
 const (
 	_ int = iota
-	PriorityLowest
-	PriorityAssignment // =
-	PriorityOr         // ||
-	PriorityAnd        // &&
-	PriorityEquals     // ==
-	PriorityComparison // > or <
-	PrioritySum        // +
-	PriorityProduct    // *
-	PriorityPrefix     // -X or !X
-	PriorityCall       // myFunction(X)
-	PriorityIndex      // array[index]
+	precedenceLowest
+	precedenceAssignment // =
+	precedenceOr         // ||
+	precedenceAnd        // &&
+	precedenceEquals     // ==
+	precedenceComparison // > or <
+	precedenceSum        // +
+	precedenceProduct    // *
+	precedencePrefix     // -X or !X
+	precedenceCall       // myFunction(X)
+	precedenceIndex      // array[index]
 )
 
 var precedences = map[TokenID]int{
-	TokenEq:         PriorityEquals,
-	TokenNotEq:      PriorityEquals,
-	TokenLt:         PriorityComparison,
-	TokenGt:         PriorityComparison,
-	TokenAssignment: PriorityAssignment,
-	TokenAnd:        PriorityAnd,
-	TokenOr:         PriorityOr,
-	TokenPlus:       PrioritySum,
-	TokenMinus:      PrioritySum,
-	TokenSlash:      PriorityProduct,
-	TokenAsterisk:   PriorityProduct,
-	TokenLParen:     PriorityCall,
-	TokenLBracket:   PriorityIndex,
-	TokenLBrace:     PriorityIndex,
-	TokenDot:        PriorityIndex,
-	TokenColon:      PriorityIndex,
+	TokenEq:         precedenceEquals,
+	TokenNotEq:      precedenceEquals,
+	TokenLt:         precedenceComparison,
+	TokenGt:         precedenceComparison,
+	TokenAssignment: precedenceAssignment,
+	TokenAnd:        precedenceAnd,
+	TokenOr:         precedenceOr,
+	TokenPlus:       precedenceSum,
+	TokenMinus:      precedenceSum,
+	TokenSlash:      precedenceProduct,
+	TokenAsterisk:   precedenceProduct,
+	TokenLParen:     precedenceCall,
+	TokenLBracket:   precedenceIndex,
+	TokenLBrace:     precedenceIndex,
+	TokenDot:        precedenceIndex,
+	TokenColon:      precedenceIndex,
 }
 
 type (
@@ -240,7 +240,7 @@ func (p *Parser) parseStructFieldAssignment(terminatedTokens []TokenID) (*AstStr
 	if err = p.read(); err != nil {
 		return nil, err
 	}
-	assignStmt.Value, err = p.parseExpression(PriorityLowest, terminatedTokens)
+	assignStmt.Value, err = p.parseExpression(precedenceLowest, terminatedTokens)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (p *Parser) parseAssignment(terminatedTokens []TokenID) (*AstAssignment, er
 	if err = p.read(); err != nil {
 		return nil, err
 	}
-	assignStmt.Value, err = p.parseExpression(PriorityLowest, terminatedTokens)
+	assignStmt.Value, err = p.parseExpression(precedenceLowest, terminatedTokens)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +292,7 @@ func (p *Parser) parseReturn() (*AstReturn, error) {
 		return nil, err
 	}
 
-	stmt.ReturnValue, err = p.parseExpression(PriorityLowest, TokenIDs(TokenEOL))
+	stmt.ReturnValue, err = p.parseExpression(precedenceLowest, TokenIDs(TokenEOL))
 
 	if err != nil {
 		return nil, err
@@ -383,7 +383,7 @@ func (p *Parser) parseUnaryExpression(terminatedTokens []TokenID) (AstExpression
 	if err := p.read(); err != nil {
 		return nil, err
 	}
-	expressionResult, err := p.parseExpression(PriorityPrefix, terminatedTokens)
+	expressionResult, err := p.parseExpression(precedencePrefix, terminatedTokens)
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +458,7 @@ func (p *Parser) parseSwitchStatement() (AstStatement, error) {
 			return nil, err
 		}
 
-		expr, err := p.parseExpression(PriorityLowest, TokenIDs(TokenLBrace))
+		expr, err := p.parseExpression(precedenceLowest, TokenIDs(TokenLBrace))
 		if err != nil {
 			return nil, err
 		}
@@ -480,14 +480,14 @@ func (p *Parser) parseSwitchStatement() (AstStatement, error) {
 		if stmt.SwitchExpression != nil {
 			caseBlock.Condition, err = p.parseRightPartOfExpression(
 				stmt.SwitchExpression,
-				PriorityLowest,
+				precedenceLowest,
 				TokenIDs(TokenEOL),
 			)
 		} else {
 			if err = p.read(); err != nil {
 				return nil, err
 			}
-			caseBlock.Condition, err = p.parseExpression(PriorityLowest, TokenIDs(TokenEOL))
+			caseBlock.Condition, err = p.parseExpression(precedenceLowest, TokenIDs(TokenEOL))
 		}
 		if err != nil {
 			return nil, err
@@ -529,7 +529,7 @@ func (p *Parser) parseIfStatement() (AstStatement, error) {
 		return nil, err
 	}
 
-	stmt.Condition, err = p.parseExpression(PriorityLowest, TokenIDs(TokenLBrace))
+	stmt.Condition, err = p.parseExpression(precedenceLowest, TokenIDs(TokenLBrace))
 	if err != nil {
 		return nil, err
 	}
@@ -706,7 +706,7 @@ func (p *Parser) parseExpressions(closeTokens []TokenID) ([]AstExpression, error
 	var expressions []AstExpression
 
 	for !p.currTokenIn(closeTokens) {
-		expression, err := p.parseExpression(PriorityLowest, append(closeTokens, TokenComma))
+		expression, err := p.parseExpression(precedenceLowest, append(closeTokens, TokenComma))
 		if err != nil {
 			return nil, err
 		}
@@ -731,7 +731,7 @@ func (p *Parser) parseGroupedExpression(terminatedTokens []TokenID) (AstExpressi
 		return nil, err
 	}
 
-	expression, err := p.parseExpression(PriorityLowest, TokenIDs(TokenRParen))
+	expression, err := p.parseExpression(precedenceLowest, TokenIDs(TokenRParen))
 	if err != nil {
 		return nil, err
 	}
@@ -799,7 +799,7 @@ func (p *Parser) parseArrayIndexCall(array AstExpression, terminatedTokens []Tok
 		return nil, err
 	}
 
-	index, err := p.parseExpression(PriorityIndex, []TokenID{TokenRBracket})
+	index, err := p.parseExpression(precedenceIndex, []TokenID{TokenRBracket})
 	if err != nil {
 		return nil, err
 	}
@@ -928,7 +928,7 @@ func (p *Parser) nextPrecedence() int {
 		return pr
 	}
 
-	return PriorityLowest
+	return precedenceLowest
 }
 
 func (p *Parser) curPrecedence() int {
@@ -936,7 +936,7 @@ func (p *Parser) curPrecedence() int {
 		return pr
 	}
 
-	return PriorityLowest
+	return precedenceLowest
 }
 
 func (p *Parser) expectCurToken(TokenID TokenID) error {
