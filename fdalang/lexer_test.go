@@ -78,7 +78,7 @@ c = fn(int a, int b) int {
 		{TokenIdent, "a"},
 		{TokenEOL, ""},
 		{TokenRBrace, "}"},
-		{TokenEOF, ""},
+		{TokenEOC, ""},
 	}
 
 	testLexerInput(input, tests, t)
@@ -91,7 +91,7 @@ func TestReal(t *testing.T) {
 		{TokenIdent, "a"},
 		{TokenAssignment, "="},
 		{TokenNumFloat, "5.6"},
-		{TokenEOF, ""},
+		{TokenEOC, ""},
 	}
 
 	testLexerInput(input, tests, t)
@@ -118,7 +118,7 @@ o = arr[0]`
 		{TokenLBracket, "["},
 		{TokenNumInt, "0"},
 		{TokenRBracket, "]"},
-		{TokenEOF, ""},
+		{TokenEOC, ""},
 	}
 
 	testLexerInput(input, tests, t)
@@ -131,7 +131,7 @@ func TestRealShort(t *testing.T) {
 		{TokenIdent, "a"},
 		{TokenAssignment, "="},
 		{TokenNumFloat, "5."},
-		{TokenEOF, ""},
+		{TokenEOC, ""},
 	}
 
 	testLexerInput(input, tests, t)
@@ -148,7 +148,7 @@ func TestLogicalAndOr(t *testing.T) {
 		{TokenFalse, "false"},
 		{TokenOr, "||"},
 		{TokenFalse, "false"},
-		{TokenEOF, ""},
+		{TokenEOC, ""},
 	}
 
 	testLexerInput(input, tests, t)
@@ -193,7 +193,7 @@ px = p.x`
 		{TokenIdent, "p"},
 		{TokenDot, "."},
 		{TokenIdent, "x"},
-		{TokenEOF, ""},
+		{TokenEOC, ""},
 	}
 
 	testLexerInput(input, tests, t)
@@ -229,7 +229,7 @@ default:
 		{TokenNumInt, "2"},
 		{TokenEOL, ""},
 		{TokenRBrace, "}"},
-		{TokenEOF, ""},
+		{TokenEOC, ""},
 	}
 
 	testLexerInput(input, tests, t)

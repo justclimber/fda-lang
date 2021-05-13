@@ -137,7 +137,7 @@ func (p *Parser) back() {
 func (p *Parser) Parse() (*AstStatementsBlock, error) {
 	program := &AstStatementsBlock{}
 
-	statements, err := p.parseBlockOfStatements(TokenIDs(TokenEOF))
+	statements, err := p.parseBlockOfStatements(TokenIDs(TokenEOC))
 	program.Statements = statements
 
 	return program, err

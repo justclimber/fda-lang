@@ -29,6 +29,18 @@ func (l *Lexer) fetch(line, pos int) {
 	l.pos = pos
 }
 
+func ParseString(s string) ([]Token, error) {
+	l := NewLexer(s)
+	tokens := make([]Token, 0)
+	for t, err := l.NextToken(); t.Type != TokenEOC; {
+		if err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, t)
+	}
+	return tokens, nil
+}
+
 func (l *Lexer) GetCurrentPosition() int {
 	return l.currPosition
 }
@@ -137,7 +149,7 @@ func (l *Lexer) NextToken() (Token, error) {
 		}
 	case 0:
 		currToken.Value = ""
-		currToken.Type = TokenEOF
+		currToken.Type = TokenEOC
 	default:
 		if isDigit(l.currChar) {
 			value, isInt := l.readNumber()
