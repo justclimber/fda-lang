@@ -978,7 +978,7 @@ func (p *Parser) getExpectedTokens(tokenTypes []TokenID) (Token, error) {
 		}
 	}
 	err := p.parseError("expected token to be one of (%s), got '%s' instead",
-		GetTokensString(tokenTypes), p.currToken.Type)
+		TokensString(tokenTypes), p.currToken.Type)
 	return Token{}, err
 }
 

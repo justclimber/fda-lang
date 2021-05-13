@@ -98,7 +98,7 @@ func TokenIDs(tokens TokenID) []TokenID {
 	return []TokenID{tokens}
 }
 
-func GetTokensString(tokens []TokenID) string {
+func TokensString(tokens []TokenID) string {
 	var s []string
 	for _, t := range tokens {
 		s = append(s, fmt.Sprintf("'%s'", t))
