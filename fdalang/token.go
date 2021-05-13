@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	TokenEOL = "TokenEOL"
-	TokenEOF = "TokenEOF"
+	TokenEOL = "enf of line"
+	TokenEOF = "end of file"
 
 	TokenAssignment = "="
 	TokenComma      = ","
