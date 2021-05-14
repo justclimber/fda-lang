@@ -226,6 +226,7 @@ func (node *AstStructFieldCall) GetToken() Token               { return node.Tok
 func (node *AstEnumDefinition) GetToken() Token                { return node.Token }
 func (node *AstEnumElementCall) GetToken() Token               { return node.Token }
 func (node *AstSwitch) GetToken() Token                        { return node.Token }
+func (node *AstCase) GetToken() Token                          { return node.Token }
 func (node *AstEmptier) GetToken() Token                       { return node.Token }
 func (node *AstStatementsBlock) GetToken() Token {
 	if len(node.Statements) > 0 {
