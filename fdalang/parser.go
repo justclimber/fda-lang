@@ -168,13 +168,13 @@ func (p *Parser) parseStatement() (AstStatement, error) {
 	case TokenReturn:
 		return p.parseReturn()
 	case TokenIf:
-		return p.parseIfStatement()
+		return p.parseIf()
 	case TokenStruct:
 		return p.parseStructDefinition()
 	case TokenEnum:
 		return p.parseEnumDefinition()
 	case TokenSwitch:
-		return p.parseSwitchStatement()
+		return p.parseSwitch()
 	case TokenEOL:
 		return nil, nil
 	default:
@@ -304,8 +304,7 @@ func (p *Parser) parseReturn() (*AstReturn, error) {
 func (p *Parser) parseExpression(precedence int, terminatedTokens []TokenID) (AstExpression, error) {
 	unaryFunction := p.unaryExprFunctions[p.currToken.ID]
 	if unaryFunction == nil {
-		err := p.parseError("no Unary parse function for %s found", p.currToken.ID)
-		return nil, err
+		return nil, p.parseError("no Unary parse function for %s found", p.currToken.ID)
 	}
 
 	leftExpr, err := unaryFunction(terminatedTokens)
@@ -326,15 +325,14 @@ func (p *Parser) parseRightPartOfExpression(
 	for !p.nextTokenIn(terminatedTokens) && precedence < nextPrecedence {
 		binExprFunction := p.binExprFunctions[p.nextToken.ID]
 		if binExprFunction == nil {
-			err := p.parseError("Unexpected next token for binary expression '%s'", p.nextToken.ID)
-			return nil, err
+			return nil, p.parseError("Unexpected next token for binary expression '%s'", p.nextToken.ID)
 		}
 
 		if err = p.read(); err != nil {
 			return nil, err
 		}
-		leftExpr, err = binExprFunction(leftExpr, terminatedTokens)
 
+		leftExpr, err = binExprFunction(leftExpr, terminatedTokens)
 		if err != nil {
 			return nil, err
 		}
@@ -343,10 +341,6 @@ func (p *Parser) parseRightPartOfExpression(
 }
 
 func (p *Parser) parseIdentifierAsExpression(terminatedTokens []TokenID) (AstExpression, error) {
-	err := p.expectCurToken(TokenIdent)
-	if err != nil {
-		return nil, err
-	}
 	return &AstIdentifier{
 		Token: p.currToken,
 		Value: p.currToken.Value,
@@ -354,12 +348,10 @@ func (p *Parser) parseIdentifierAsExpression(terminatedTokens []TokenID) (AstExp
 }
 
 func (p *Parser) parseIdentifier(terminatedTokens []TokenID) (*AstIdentifier, error) {
-	expr, err := p.parseIdentifierAsExpression(terminatedTokens)
-	if err != nil {
-		return nil, err
-	}
-	ident, _ := expr.(*AstIdentifier)
-	return ident, nil
+	return &AstIdentifier{
+		Token: p.currToken,
+		Value: p.currToken.Value,
+	}, nil
 }
 
 func (p *Parser) parseInteger(terminatedTokens []TokenID) (AstExpression, error) {
@@ -367,8 +359,7 @@ func (p *Parser) parseInteger(terminatedTokens []TokenID) (AstExpression, error)
 
 	value, err := strconv.ParseInt(p.currToken.Value, 0, 64)
 	if err != nil {
-		err := p.parseError("could not parse %q as integer", p.currToken.Value)
-		return nil, err
+		return nil, p.parseError("could not parse %q as integer", p.currToken.Value)
 	}
 
 	node.Value = value
@@ -403,11 +394,11 @@ func (p *Parser) parseEmptierExpression(terminatedTokens []TokenID) (AstExpressi
 		return nil, err
 	}
 	if p.currToken.ID == TokenLBracket {
-		if err := p.requireToken(TokenRBracket); err != nil {
+		if err = p.requireToken(TokenRBracket); err != nil {
 			return nil, err
 		}
 		node.IsArray = true
-		if err := p.read(); err != nil {
+		if err = p.read(); err != nil {
 			return nil, err
 		}
 	}
@@ -421,8 +412,7 @@ func (p *Parser) parseReal(terminatedTokens []TokenID) (AstExpression, error) {
 
 	value, err := strconv.ParseFloat(p.currToken.Value, 64)
 	if err != nil {
-		err := p.parseError("could not parse %q as float", p.currToken.Value)
-		return nil, err
+		return nil, p.parseError("could not parse %q as float", p.currToken.Value)
 	}
 
 	node.Value = value
@@ -449,7 +439,7 @@ func (p *Parser) parseBinExpression(left AstExpression, terminatedTokens []Token
 	return expression, nil
 }
 
-func (p *Parser) parseSwitchStatement() (AstStatement, error) {
+func (p *Parser) parseSwitch() (AstStatement, error) {
 	stmt := &AstSwitch{Token: p.currToken}
 
 	var err error
@@ -520,8 +510,8 @@ func (p *Parser) parseSwitchStatement() (AstStatement, error) {
 	return stmt, nil
 }
 
-func (p *Parser) parseIfStatement() (AstStatement, error) {
-	stmt := &AstIfStatement{Token: p.currToken}
+func (p *Parser) parseIf() (AstStatement, error) {
+	stmt := &AstIf{Token: p.currToken}
 
 	var err error
 

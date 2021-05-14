@@ -77,7 +77,7 @@ func (e *ExecAstVisitor) execStatement(node AstStatement, env *Environment) (*Ob
 		return nil, err
 	case *AstReturn:
 		return e.execReturn(astNode, env)
-	case *AstIfStatement:
+	case *AstIf:
 		return e.execIfStatement(astNode, env)
 	case *AstSwitch:
 		return e.execSwitch(astNode, env)
@@ -357,7 +357,7 @@ func (e *ExecAstVisitor) execExpressionList(expressions []AstExpression, env *En
 	return result, nil
 }
 
-func (e *ExecAstVisitor) execIfStatement(node *AstIfStatement, env *Environment) (*ObjReturnValue, error) {
+func (e *ExecAstVisitor) execIfStatement(node *AstIf, env *Environment) (*ObjReturnValue, error) {
 	e.execCallback(Operation{Type: OperationIfStmt})
 	condition, err := e.execExpression(node.Condition, env)
 	if err != nil {

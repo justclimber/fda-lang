@@ -140,14 +140,14 @@ type AstFunctionCall struct {
 
 func (node *AstFunctionCall) Expression() {}
 
-type AstIfStatement struct {
+type AstIf struct {
 	Token          Token
 	Condition      AstExpression
 	PositiveBranch *AstStatementsBlock
 	ElseBranch     *AstStatementsBlock
 }
 
-func (node *AstIfStatement) Statement() {}
+func (node *AstIf) Statement() {}
 
 type AstEnumDefinition struct {
 	Token    Token
@@ -219,7 +219,7 @@ func (node *AstStatementWithVoidedExpression) GetToken() Token { return node.Tok
 func (node *AstFunction) GetToken() Token                      { return node.Token }
 func (node *AstVarAndType) GetToken() Token                    { return node.Token }
 func (node *AstFunctionCall) GetToken() Token                  { return node.Token }
-func (node *AstIfStatement) GetToken() Token                   { return node.Token }
+func (node *AstIf) GetToken() Token                            { return node.Token }
 func (node *AstStructDefinition) GetToken() Token              { return node.Token }
 func (node *AstStruct) GetToken() Token                        { return node.Token }
 func (node *AstStructFieldCall) GetToken() Token               { return node.Token }

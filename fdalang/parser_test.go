@@ -156,9 +156,9 @@ b = 2
 	require.Nil(t, err)
 
 	require.Len(t, astProgram.Statements, 2)
-	assert.IsType(t, &AstIfStatement{}, astProgram.Statements[0])
+	assert.IsType(t, &AstIf{}, astProgram.Statements[0])
 
-	ifStatement, _ := astProgram.Statements[0].(*AstIfStatement)
+	ifStatement, _ := astProgram.Statements[0].(*AstIf)
 	assert.NotNil(t, ifStatement.Condition)
 }
 
@@ -177,7 +177,7 @@ b = 2
 	require.Nil(t, err)
 
 	require.Len(t, astProgram.Statements, 2)
-	assert.IsType(t, &AstIfStatement{}, astProgram.Statements[0])
+	assert.IsType(t, &AstIf{}, astProgram.Statements[0])
 }
 
 func TestArrayAsInvalidStatementNegative(t *testing.T) {
