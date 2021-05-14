@@ -56,19 +56,8 @@ type Parser struct {
 	binExprFunctions   map[TokenID]binExprFunctions
 }
 
-func NewParser(l *Lexer) (*Parser, error) {
+func NewParser(l *Lexer) *Parser {
 	p := &Parser{l: l}
-
-	var err error
-	p.currToken, err = p.l.NextToken()
-	if err != nil {
-		return nil, err
-	}
-
-	p.nextToken, err = p.l.NextToken()
-	if err != nil {
-		return nil, err
-	}
 
 	p.unaryExprFunctions = make(map[TokenID]unaryExprFunction)
 	p.registerUnaryExprFunction(TokenMinus, p.parseUnaryExpression)
@@ -100,7 +89,7 @@ func NewParser(l *Lexer) (*Parser, error) {
 	p.registerBinExprFunction(TokenDot, p.parseStructFieldCall)
 	p.registerBinExprFunction(TokenColon, p.parseEnumExpression)
 
-	return p, nil
+	return p
 }
 
 func (p *Parser) read() error {
@@ -135,6 +124,17 @@ func (p *Parser) back() {
 }
 
 func (p *Parser) Parse() (*AstStatementsBlock, error) {
+	var err error
+	p.currToken, err = p.l.NextToken()
+	if err != nil {
+		return nil, err
+	}
+
+	p.nextToken, err = p.l.NextToken()
+	if err != nil {
+		return nil, err
+	}
+
 	program := &AstStatementsBlock{}
 
 	statements, err := p.parseBlockOfStatements(TokenIDs(TokenEOC))

@@ -11,10 +11,7 @@ func main() {
 	sourceCode, _ := ioutil.ReadFile("example/example1")
 	fmt.Printf("Running source code:\n%s\n", string(sourceCode))
 	l := fdalang.NewLexer(string(sourceCode))
-	p, err := fdalang.NewParser(l)
-	if err != nil {
-		log.Fatalf("Lexing error: %s\n", err.Error())
-	}
+	p := fdalang.NewParser(l)
 
 	astProgram, err := p.Parse()
 	if err != nil {

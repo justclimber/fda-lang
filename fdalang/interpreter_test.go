@@ -553,8 +553,7 @@ func TestStructVarDeclarationTypeMismatchNegative(t *testing.T) {
 p = point{x = 1., y = 2}
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
 	err = NewExecAstVisitor().ExecAst(astProgram, NewEnvironment())
@@ -569,8 +568,7 @@ func TestStructVarDeclarationVarNameMismatchNegative(t *testing.T) {
 p = point{x = 1., z = 2.}
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
 	err = NewExecAstVisitor().ExecAst(astProgram, NewEnvironment())
@@ -585,8 +583,7 @@ func TestStructVarDeclarationNotAllVarsFilledNegative(t *testing.T) {
 p = point{x = 1.}
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
 	err = NewExecAstVisitor().ExecAst(astProgram, NewEnvironment())
@@ -598,8 +595,7 @@ func TestArrayMixedTypeNegative(t *testing.T) {
 b = a[1]
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
 	err = NewExecAstVisitor().ExecAst(astProgram, NewEnvironment())
@@ -688,8 +684,7 @@ func TestExecAssignmentToBuiltinShouldFail(t *testing.T) {
 	input := `print = 10
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 	env := NewEnvironment()
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
@@ -700,8 +695,7 @@ func TestExecAssignmentToBuiltinShouldFail(t *testing.T) {
 
 func testExecAngGetEnv(t *testing.T, input string) *Environment {
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 	env := NewEnvironment()
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
@@ -747,7 +741,7 @@ func BenchmarkExecFull(b *testing.B) {
 	input := codeToBench
 	for i := 0; i < b.N; i++ {
 		l := NewLexer(input)
-		p, _ := NewParser(l)
+		p := NewParser(l)
 		env := NewEnvironment()
 		astProgram, err := p.Parse()
 		if err != nil {
@@ -764,7 +758,7 @@ func BenchmarkParse(b *testing.B) {
 	input := codeToBench
 	for i := 0; i < b.N; i++ {
 		l := NewLexer(input)
-		p, _ := NewParser(l)
+		p := NewParser(l)
 		_, err := p.Parse()
 		if err != nil {
 			log.Fatal(err.Error())
@@ -774,7 +768,7 @@ func BenchmarkParse(b *testing.B) {
 func BenchmarkExecOnlyAst(b *testing.B) {
 	input := codeToBench
 	l := NewLexer(input)
-	p, _ := NewParser(l)
+	p := NewParser(l)
 	astProgram, err := p.Parse()
 	if err != nil {
 		log.Fatal(err.Error())

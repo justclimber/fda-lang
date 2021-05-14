@@ -12,8 +12,7 @@ func TestParse(t *testing.T) {
 b = 3
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
@@ -34,8 +33,7 @@ func TestParseUnary(t *testing.T) {
 b = -a
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
@@ -57,8 +55,7 @@ func TestParseReal(t *testing.T) {
 	input := `a = 5.6
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
@@ -78,8 +75,7 @@ func TestParseFunctionAndFunctionCall(t *testing.T) {
 c = a()
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
@@ -112,8 +108,7 @@ func TestParseFunctionAndFunctionCallWithArgs(t *testing.T) {
 c = a(2, 5)
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
@@ -155,8 +150,7 @@ a = 4
 b = 2
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
@@ -177,8 +171,7 @@ c = 3
 b = 2
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
+	p := NewParser(l)
 
 	astProgram, err := p.Parse()
 	require.Nil(t, err)
@@ -191,9 +184,8 @@ func TestArrayAsInvalidStatementNegative(t *testing.T) {
 	input := `int[]{1, 2.1, 3}
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
-	_, err = p.Parse()
+	p := NewParser(l)
+	_, err := p.Parse()
 	require.NotNil(t, err)
 }
 
@@ -201,9 +193,8 @@ func TestBinExprAsInvalidStatementNegative(t *testing.T) {
 	input := `5 + 10
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
-	_, err = p.Parse()
+	p := NewParser(l)
+	_, err := p.Parse()
 	require.NotNil(t, err)
 }
 
@@ -211,8 +202,7 @@ func TestInvalidExpr(t *testing.T) {
 	input := `a = 5 + 10 )
 `
 	l := NewLexer(input)
-	p, err := NewParser(l)
-	require.Nil(t, err)
-	_, err = p.Parse()
+	p := NewParser(l)
+	_, err := p.Parse()
 	require.NotNil(t, err)
 }
