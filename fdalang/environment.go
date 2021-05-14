@@ -13,14 +13,14 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 func NewEnvironment() *Environment {
 	return &Environment{
 		store:             make(map[string]Object),
-		structDefinitions: make(map[string]*ObjStructDefinition),
+		structDefinitions: make(map[string]*AstStructDefinition),
 		enumDefinitions:   make(map[string]*ObjEnumDefinition),
 	}
 }
 
 type Environment struct {
 	store             map[string]Object
-	structDefinitions map[string]*ObjStructDefinition
+	structDefinitions map[string]*AstStructDefinition
 	enumDefinitions   map[string]*ObjEnumDefinition
 	outer             *Environment
 }
@@ -43,7 +43,7 @@ func (e *Environment) Set(name string, val Object) Object {
 	return val
 }
 
-func (e *Environment) RegisterStructDefinition(s *ObjStructDefinition) error {
+func (e *Environment) RegisterStructDefinition(s *AstStructDefinition) error {
 	if _, exists := e.structDefinitions[s.Name]; exists {
 		return fmt.Errorf("struct '%s' already defined in this scope", s.Name)
 	}
@@ -61,7 +61,7 @@ func (e *Environment) RegisterEnumDefinition(ed *ObjEnumDefinition) error {
 	return nil
 }
 
-func (e *Environment) GetStructDefinition(name string) (*ObjStructDefinition, bool) {
+func (e *Environment) GetStructDefinition(name string) (*AstStructDefinition, bool) {
 	s, ok := e.structDefinitions[name]
 
 	if !ok && e.outer != nil {

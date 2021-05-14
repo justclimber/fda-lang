@@ -29,7 +29,7 @@ func (e *Environment) ToStrings() []string {
 	return result
 }
 
-func NewEmptyStruct(def *ObjStructDefinition) *ObjStruct {
+func NewEmptyStruct(def *AstStructDefinition) *ObjStruct {
 	return &ObjStruct{
 		Emptier:    Emptier{Empty: true},
 		Definition: def,
@@ -48,7 +48,7 @@ func (e *Environment) Keys() []string {
 	return keys
 }
 
-func (e *Environment) LoadVarsInStruct(definition *ObjStructDefinition, s map[string]interface{}) *ObjStruct {
+func (e *Environment) LoadVarsInStruct(definition *AstStructDefinition, s map[string]interface{}) *ObjStruct {
 	fields := make(map[string]Object)
 	for k, v := range s {
 		fields[k] = getLangObject(v)

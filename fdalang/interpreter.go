@@ -11,11 +11,7 @@ var (
 )
 
 func registerStructDefinition(node *AstStructDefinition, env *Environment) error {
-	s := &ObjStructDefinition{
-		Name:   node.Name,
-		Fields: CreateVarDefinitionsFromVarType(node.Fields),
-	}
-	if err := env.RegisterStructDefinition(s); err != nil {
+	if err := env.RegisterStructDefinition(node); err != nil {
 		return err
 	}
 	return nil
@@ -32,18 +28,18 @@ func registerEnumDefinition(node *AstEnumDefinition, env *Environment) error {
 	return nil
 }
 
-func structTypeAndVarsChecks(n *AstAssignment, definition *ObjStructDefinition, result Object) error {
-	fieldType, ok := definition.Fields[n.Left.Value]
+func structTypeAndVarsChecks(n *AstAssignment, definition *AstStructDefinition, result Object) error {
+	field, ok := definition.Fields[n.Left.Value]
 	if !ok {
 		return runtimeError(
 			n, "Struct '%s' doesn't have the field '%s' in the definition", definition.Name, n.Left.Value)
 	}
-	if fieldType != string(result.Type()) {
+	if field.VarType != string(result.Type()) {
 		return runtimeError(
 			n,
 			"Field '%s' defined as '%s' but '%s' given",
 			n.Left.Value,
-			fieldType,
+			field.VarType,
 			result.Type())
 	}
 	return nil

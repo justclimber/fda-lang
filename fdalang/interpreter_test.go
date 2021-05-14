@@ -446,8 +446,8 @@ func TestRegisterStructDefinition(t *testing.T) {
 	require.Len(t, s.Fields, 2)
 	assert.NotNil(t, "x", s.Fields["x"])
 	assert.NotNil(t, "y", s.Fields["y"])
-	assert.Equal(t, "float", s.Fields["x"])
-	assert.Equal(t, "float", s.Fields["y"])
+	assert.Equal(t, "float", s.Fields["x"].VarType)
+	assert.Equal(t, "float", s.Fields["y"].VarType)
 }
 
 func TestRegisterStructNestedDefinition(t *testing.T) {
@@ -465,8 +465,8 @@ struct mech {
 	require.Len(t, s.Fields, 2)
 	assert.NotNil(t, "x", s.Fields["x"])
 	assert.NotNil(t, "y", s.Fields["y"])
-	assert.Equal(t, "float", s.Fields["x"])
-	assert.Equal(t, "float", s.Fields["y"])
+	assert.Equal(t, "float", s.Fields["x"].VarType)
+	assert.Equal(t, "float", s.Fields["y"].VarType)
 }
 
 func TestStruct(t *testing.T) {

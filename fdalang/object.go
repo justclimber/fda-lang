@@ -29,22 +29,9 @@ type Emptier struct {
 
 func (e *Emptier) IsEmpty() bool { return e.Empty }
 
-type ObjStructDefinition struct {
-	Name   string
-	Fields map[string]string
-}
-
 type ObjEnumDefinition struct {
 	Name     string
 	Elements []string
-}
-
-func CreateVarDefinitionsFromVarType(varTypes map[string]*AstVarAndType) map[string]string {
-	varDefinitions := make(map[string]string)
-	for k, v := range varTypes {
-		varDefinitions[k] = v.VarType
-	}
-	return varDefinitions
 }
 
 type IIdentifier interface{}
@@ -123,7 +110,7 @@ func (f *ObjFunction) Inspect() string {
 
 type ObjStruct struct {
 	Emptier
-	Definition *ObjStructDefinition
+	Definition *AstStructDefinition
 	Fields     map[string]Object
 }
 
