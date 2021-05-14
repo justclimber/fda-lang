@@ -14,14 +14,14 @@ func NewEnvironment() *Environment {
 	return &Environment{
 		store:             make(map[string]Object),
 		structDefinitions: make(map[string]*AstStructDefinition),
-		enumDefinitions:   make(map[string]*ObjEnumDefinition),
+		enumDefinitions:   make(map[string]*AstEnumDefinition),
 	}
 }
 
 type Environment struct {
 	store             map[string]Object
 	structDefinitions map[string]*AstStructDefinition
-	enumDefinitions   map[string]*ObjEnumDefinition
+	enumDefinitions   map[string]*AstEnumDefinition
 	outer             *Environment
 }
 
@@ -52,7 +52,7 @@ func (e *Environment) RegisterStructDefinition(s *AstStructDefinition) error {
 	return nil
 }
 
-func (e *Environment) RegisterEnumDefinition(ed *ObjEnumDefinition) error {
+func (e *Environment) RegisterEnumDefinition(ed *AstEnumDefinition) error {
 	if _, exists := e.enumDefinitions[ed.Name]; exists {
 		return fmt.Errorf("enum '%s' already defined in this scope", ed.Name)
 	}
@@ -61,21 +61,21 @@ func (e *Environment) RegisterEnumDefinition(ed *ObjEnumDefinition) error {
 	return nil
 }
 
-func (e *Environment) GetStructDefinition(name string) (*AstStructDefinition, bool) {
+func (e *Environment) StructDefinition(name string) (*AstStructDefinition, bool) {
 	s, ok := e.structDefinitions[name]
 
 	if !ok && e.outer != nil {
-		s, ok = e.outer.GetStructDefinition(name)
+		s, ok = e.outer.StructDefinition(name)
 	}
 
 	return s, ok
 }
 
-func (e *Environment) GetEnumDefinition(name string) (*ObjEnumDefinition, bool) {
+func (e *Environment) EnumDefinition(name string) (*AstEnumDefinition, bool) {
 	ed, ok := e.enumDefinitions[name]
 
 	if !ok && e.outer != nil {
-		ed, ok = e.outer.GetEnumDefinition(name)
+		ed, ok = e.outer.EnumDefinition(name)
 	}
 
 	return ed, ok

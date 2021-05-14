@@ -29,11 +29,6 @@ type Emptier struct {
 
 func (e *Emptier) IsEmpty() bool { return e.Empty }
 
-type ObjEnumDefinition struct {
-	Name     string
-	Elements []string
-}
-
 type IIdentifier interface{}
 type IStatements interface{}
 
@@ -61,7 +56,7 @@ func (b *ObjBoolean) Type() ObjectType { return TypeBool }
 func (b *ObjBoolean) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
 
 type ObjEnum struct {
-	Definition *ObjEnumDefinition
+	Definition *AstEnumDefinition
 	Value      int8
 }
 

@@ -282,7 +282,7 @@ pts = ?[]point
 			typeCasted, ok := varToTest.(*ObjFloat)
 			require.True(t, ok, "var %s internal type mismatch", toTest.name)
 			require.True(t, typeCasted.Empty)
-		} else if def, ok := env.GetStructDefinition(toTest.varType); ok {
+		} else if def, ok := env.StructDefinition(toTest.varType); ok {
 			typeCasted, ok := varToTest.(*ObjStruct)
 			require.True(t, ok, "var %s should be struct but got '%T'", toTest.name, varToTest)
 			require.Equal(t, toTest.varType, def.Name, "var %s struct definition mismatch", toTest.name)
@@ -441,7 +441,7 @@ func TestRegisterStructDefinition(t *testing.T) {
 }
 `
 	env := testExecAngGetEnv(t, input)
-	s, ok := env.GetStructDefinition("point")
+	s, ok := env.StructDefinition("point")
 	require.True(t, ok)
 	require.Len(t, s.Fields, 2)
 	assert.NotNil(t, "x", s.Fields["x"])
@@ -460,7 +460,7 @@ struct mech {
 }
 `
 	env := testExecAngGetEnv(t, input)
-	s, ok := env.GetStructDefinition("point")
+	s, ok := env.StructDefinition("point")
 	require.True(t, ok)
 	require.Len(t, s.Fields, 2)
 	assert.NotNil(t, "x", s.Fields["x"])

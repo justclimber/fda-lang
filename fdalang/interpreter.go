@@ -10,24 +10,6 @@ var (
 	ReservedObjFalse = &ObjBoolean{Value: false}
 )
 
-func registerStructDefinition(node *AstStructDefinition, env *Environment) error {
-	if err := env.RegisterStructDefinition(node); err != nil {
-		return err
-	}
-	return nil
-}
-
-func registerEnumDefinition(node *AstEnumDefinition, env *Environment) error {
-	ed := &ObjEnumDefinition{
-		Name:     node.Name,
-		Elements: node.Elements,
-	}
-	if err := env.RegisterEnumDefinition(ed); err != nil {
-		return err
-	}
-	return nil
-}
-
 func structTypeAndVarsChecks(n *AstAssignment, definition *AstStructDefinition, result Object) error {
 	field, ok := definition.Fields[n.Left.Value]
 	if !ok {

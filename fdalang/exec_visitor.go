@@ -82,9 +82,9 @@ func (e *ExecAstVisitor) execStatement(node AstStatement, env *Environment) (*Ob
 	case *AstSwitch:
 		return e.execSwitch(astNode, env)
 	case *AstStructDefinition:
-		return nil, registerStructDefinition(astNode, env)
+		return nil, env.RegisterStructDefinition(astNode)
 	case *AstEnumDefinition:
-		return nil, registerEnumDefinition(astNode, env)
+		return nil, env.RegisterEnumDefinition(astNode)
 	default:
 		return nil, runtimeError(node, "Unexpected node for statement: %T", node)
 	}
@@ -211,7 +211,7 @@ func (e *ExecAstVisitor) execEmptierExpression(node *AstEmptier, env *Environmen
 	if node.IsArray {
 		if node.Type == TypeInt || node.Type == TypeFloat {
 			return &ObjArray{Emptier: Emptier{Empty: true}, ElementsType: node.Type}, nil
-		} else if _, ok := env.GetStructDefinition(node.Type); ok {
+		} else if _, ok := env.StructDefinition(node.Type); ok {
 			return &ObjArray{Emptier: Emptier{Empty: true}, ElementsType: node.Type}, nil
 		} else {
 			return nil, runtimeError(node, "? is not supported on type: '%s[]'", node.Type)
@@ -220,7 +220,7 @@ func (e *ExecAstVisitor) execEmptierExpression(node *AstEmptier, env *Environmen
 		return &ObjInteger{Emptier: Emptier{Empty: true}}, nil
 	} else if node.Type == TypeFloat {
 		return &ObjFloat{Emptier: Emptier{Empty: true}}, nil
-	} else if def, ok := env.GetStructDefinition(node.Type); ok {
+	} else if def, ok := env.StructDefinition(node.Type); ok {
 		return &ObjStruct{
 			Emptier:    Emptier{Empty: true},
 			Definition: def,
@@ -257,7 +257,7 @@ func (e *ExecAstVisitor) execIdentifier(node *AstIdentifier, env *Environment) (
 		return builtin, nil
 	}
 
-	if ed, ok := env.GetEnumDefinition(node.Value); ok {
+	if ed, ok := env.EnumDefinition(node.Value); ok {
 		return &ObjEnum{Definition: ed}, nil
 	}
 
@@ -424,7 +424,7 @@ func (e *ExecAstVisitor) execArrayIndexCall(node *AstArrayIndexCall, env *Enviro
 
 func (e *ExecAstVisitor) execStruct(node *AstStruct, env *Environment) (Object, error) {
 	e.execCallback(Operation{Type: OperationStruct})
-	definition, ok := env.GetStructDefinition(node.Ident.Value)
+	definition, ok := env.StructDefinition(node.Ident.Value)
 	if !ok {
 		return nil, runtimeError(node, "Struct '%s' is not defined", node.Ident.Value)
 	}
