@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	TokenSOL TokenID = "start of line"
 	TokenEOL TokenID = "enf of line"
 	TokenEOC TokenID = "end of code"
 
@@ -30,8 +31,8 @@ const (
 	TokenAnd   TokenID = "&&"
 	TokenOr    TokenID = "||"
 
-	TokenNumInt   TokenID = "int_num"
-	TokenNumFloat TokenID = "float_num"
+	TokenNumInt   TokenID = "int"
+	TokenNumFloat TokenID = "float"
 
 	TokenLParen   TokenID = "("
 	TokenRParen   TokenID = ")"
@@ -57,6 +58,8 @@ const (
 
 	// type hints
 	TokenType TokenID = "type"
+
+	TokenInvalid TokenID = "invalid"
 )
 
 type TokenID string
@@ -69,7 +72,7 @@ type Token struct {
 	Pos   int
 }
 
-var keywords = map[string]TokenID{
+var strToKeywordMap = map[string]TokenID{
 	"fn":      TokenFunction,
 	"return":  TokenReturn,
 	"void":    TokenType,
@@ -86,9 +89,35 @@ var keywords = map[string]TokenID{
 	"default": TokenDefault,
 }
 
-func LookupIdent(ident string) TokenID {
-	if keywordToken, ok := keywords[ident]; ok {
-		return keywordToken
+func TokensKeywords() map[TokenID]bool {
+	return map[TokenID]bool{
+		TokenFunction: true,
+		TokenReturn: true,
+		TokenType: true,
+		TokenTrue: true,
+		TokenFalse: true,
+		TokenIf: true,
+		TokenElse: true,
+		TokenStruct: true,
+		TokenEnum: true,
+		TokenSwitch: true,
+		TokenCase: true,
+		TokenDefault: true,
+	}
+}
+
+func TokensConstants() map[TokenID]bool {
+	return map[TokenID]bool{
+		TokenNumInt: true,
+		TokenNumFloat: true,
+		TokenTrue: true,
+		TokenFalse: true,
+	}
+}
+
+func keywordOrIdent(ident string) TokenID {
+	if k, ok := strToKeywordMap[ident]; ok {
+		return k
 	}
 
 	return TokenIdent

@@ -7,12 +7,12 @@ import (
 )
 
 type Lexer struct {
-	input        []rune
-	currPosition int
-	currChar     rune
-	nextChar     rune
-	line         int
-	pos          int
+	input    []rune
+	inputPos int
+	currChar rune
+	nextChar rune
+	line     int
+	pos      int
 }
 
 func NewLexer(input string) *Lexer {
@@ -23,38 +23,45 @@ func NewLexer(input string) *Lexer {
 }
 
 func (l *Lexer) fetch(line, pos int) {
-	l.currChar = l.input[l.currPosition]
-	l.nextChar = l.input[l.currPosition+1]
+	l.currChar = l.input[l.inputPos]
+	l.nextChar = l.input[l.inputPos+1]
 	l.line = line
 	l.pos = pos
 }
 
-func ParseString(s string) ([]Token, error) {
+func ParseString(s string) ([]Token, bool, error) {
+	if len(s) == 0 {
+		return []Token{}, false, nil
+	}
+
+	s = s + "\n"
+
 	l := NewLexer(s)
 	tokens := make([]Token, 0)
-	for t, err := l.NextToken(); t.ID != TokenEOC; {
-		if err != nil {
-			return nil, err
+	hasInvalidTokens := false
+	for {
+		// err is invalid token
+		t, err := l.NextToken()
+		if t.ID == TokenInvalid {
+			hasInvalidTokens = true
+		}
+		if t.ID == TokenEOL {
+			return tokens, hasInvalidTokens, err
 		}
 		tokens = append(tokens, t)
 	}
-	return tokens, nil
-}
-
-func (l *Lexer) GetCurrentPosition() int {
-	return l.currPosition
 }
 
 func (l *Lexer) read() {
-	l.currPosition += 1
+	l.inputPos += 1
 	l.currChar = l.nextChar
-	if l.currPosition+1 >= len(l.input) {
+	if l.inputPos+1 >= len(l.input) {
 		l.nextChar = rune(0)
 	} else {
-		l.nextChar = l.input[l.currPosition+1]
+		l.nextChar = l.input[l.inputPos+1]
 	}
 
-	if l.currPosition+1 < len(l.input) && l.input[l.currPosition-1] == '\n' {
+	if l.inputPos+1 < len(l.input) && l.input[l.inputPos-1] == '\n' {
 		l.line += 1
 		l.pos = 1
 	} else {
@@ -63,17 +70,18 @@ func (l *Lexer) read() {
 }
 
 func (l *Lexer) BackToToken(t Token) {
-	l.currPosition = t.Pos
+	l.inputPos = t.Pos
 	l.fetch(t.Line, t.Col)
 }
 
 func (l *Lexer) NextToken() (Token, error) {
 	var currToken Token
+	var err error
 	l.skipWhitespace()
 
 	currToken.Line = l.line
 	currToken.Col = l.pos
-	currToken.Pos = l.currPosition
+	currToken.Pos = l.inputPos
 
 	simpleTokens := []TokenID{
 		TokenComma,
@@ -125,18 +133,24 @@ func (l *Lexer) NextToken() (Token, error) {
 		}
 	case '&':
 		if l.nextChar != '&' {
-			return currToken, l.error("Unexpected one `&`. Did you mean '&&'?")
+			currToken.ID = TokenInvalid
+			currToken.Value = string(l.currChar)
+			err = l.error("Unexpected one `&`. Did you mean '&&'?")
+		} else {
+			currToken.ID = TokenAnd
+			currToken.Value = string(TokenAnd)
+			l.read()
 		}
-		currToken.ID = TokenAnd
-		currToken.Value = string(TokenAnd)
-		l.read()
 	case '|':
 		if l.nextChar != '|' {
-			return currToken, l.error("Unexpected one `|`. Did you mean '||'?")
+			currToken.ID = TokenInvalid
+			currToken.Value = string(l.currChar)
+			err = l.error("Unexpected one `|`. Did you mean '||'?")
+		} else {
+			currToken.ID = TokenOr
+			currToken.Value = string(TokenOr)
+			l.read()
 		}
-		currToken.ID = TokenOr
-		currToken.Value = string(TokenOr)
-		l.read()
 	case '/':
 		if l.nextChar == '/' {
 			l.consumeComment()
@@ -158,14 +172,16 @@ func (l *Lexer) NextToken() (Token, error) {
 				currToken.ID = TokenNumFloat
 			}
 		} else if unicode.IsLetter(l.currChar) {
-			currToken.Value = l.readIdentifier()
-			currToken.ID = LookupIdent(currToken.Value)
+			currToken.Value = l.readWord()
+			currToken.ID = keywordOrIdent(currToken.Value)
 		} else {
-			return currToken, l.error("Unexpected symbol: '%c'", l.currChar)
+			currToken.ID = TokenInvalid
+			currToken.Value = string(l.currChar)
+			err = l.error("Unexpected symbol: '%c'", l.currChar)
 		}
 	}
 	l.read()
-	return currToken, nil
+	return currToken, err
 }
 
 func (l *Lexer) error(format string, args ...interface{}) error {
@@ -213,7 +229,7 @@ func isDigit(ch rune) bool {
 	return '0' <= ch && ch <= '9'
 }
 
-func (l *Lexer) readIdentifier() string {
+func (l *Lexer) readWord() string {
 	result := string(l.currChar)
 	for unicode.IsLetter(l.nextChar) || isDigit(l.nextChar) {
 		result += string(l.nextChar)
